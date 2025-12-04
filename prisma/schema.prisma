@@ -1,14 +1,225 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
- provider = "prisma-client-js"
-
+  provider = "prisma-client-js"
+   output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+
+}
+
+// --------------------
+// ENUMS
+// --------------------
+
+enum AdminRole {
+  tournamentManager
+  superAdmin
+}
+
+enum Status {
+  upComing
+  onGoing
+  finished
+}
+
+enum GoalType {
+  normal
+  penalty
+  ownGoal
+}
+
+enum EventType {
+  Goal
+  Yellow
+  Red
+}
+enum MediaType {
+  teamLogo
+  playerImage
+  tournamentImage
+  matchImage
+}
+// --------------------
+// MODELS
+// --------------------
+
+// ADMIN
+model Admin {
+  id                  String           @id @default(uuid())
+  email               String           @unique
+  fullName            String
+  password            String
+  username            String           @unique
+  accessToken         String?
+  refreshToken        String?
+  role                AdminRole
+  isActive            Boolean @default(true)
+
+
+  // Relations
+  tournaments         Tournament[]     @relation("ManagedTournaments")
+  sentNotifications   Notifications[]  @relation("Sender")
+  receivedNotifications Notifications[] @relation("Receiver")
+}
+
+
+// PLAYER
+model Player {
+  id        String     @id @default(uuid())
+  name      String
+  position  String
+  number    Int        @default(99)
+  teamId    String
+
+  // Relations
+  team      Team       @relation(fields: [teamId], references: [id])
+  events    MatchEvent[]
+  goalScore GoalScorer[]
+  @@unique([teamId, number])
+}
+
+
+// TEAM
+model Team {
+  id            String       @id @default(uuid())
+  teamName      String
+  logo          String
+  tournamentId  String
+
+  // Relations
+  tournament    Tournament   @relation(fields: [tournamentId], references: [id])
+  players       Player[]
+  matchevent   MatchEvent[]
+  homeMatches   Match[]      @relation("HomeTeam")
+  awayMatches   Match[]      @relation("AwayTeam")
+}
+
+
+// TOURNAMENT
+model Tournament {
+  id             String     @id @default(uuid())
+  managerId      String
+  tournamentName String
+  startingDate   DateTime
+  endingDate     DateTime
+  description    String
+  venue          String?
+  sponsor        String?
+  status         Status
+
+  // Relations
+  teams          Team[]
+  matches        Match[]
+  manager        Admin       @relation("ManagedTournaments", fields: [managerId], references: [id])
+  mediaGallery   MediaGallery[]
+}
+
+
+// MATCH
+model Match {
+  id            String       @id @default(uuid())
+  tournamentId  String
+  scheduledDate DateTime
+  homeTeamId    String
+  awayTeamId    String
+  venue         String
+  referee       String
+  status        Status
+  homeScore     Int @default(0)
+  awayScore     Int @default(0)
+  matchWeek Int?
+
+
+  // Relations
+  tournament    Tournament   @relation(fields: [tournamentId], references: [id])
+  homeTeam      Team         @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam      Team         @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  events        MatchEvent[]
+  goalScore     GoalScorer[]
+
+  matchStats    MatchStats?
+  @@unique([homeTeamId, awayTeamId, scheduledDate])
+
+}
+
+
+// MATCH EVENTS
+model MatchEvent {
+  id          String     @id @default(ulid())
+  matchId     String
+  playerId    String
+  eventTeamId String
+  minute      Int
+  eventType   EventType
+
+//relation
+  match       Match      @relation(fields: [matchId], references: [id])
+  player      Player     @relation(fields: [playerId], references: [id])
+  team        Team       @relation(fields: [eventTeamId],references: [id])
+
+}
+
+
+// GOAL SCORERS
+model GoalScorer {
+  id        String     @id @default(uuid())
+  playerId  String
+  matchId   String
+  goaltype  GoalType    @default(normal)
+  minute    Int
+
+  match     Match       @relation(fields: [matchId], references: [id])
+  player    Player      @relation(fields: [playerId], references: [id])
+}
+
+
+// MATCH STATS (Required for AI & Predictions)
+model MatchStats {
+  id             String   @id @default(uuid())
+  matchId        String   @unique
+  possessionHome Float?
+  possessionAway Float?
+  shotsHome      Int?
+  shotsAway      Int?
+  shotsOnTargetHome Int?
+  shotsOnTargetAway Int?
+  foulsHome      Int?
+  foulsAway      Int?
+  cornersHome    Int?
+  cornersAway    Int?
+
+  match          Match    @relation(fields: [matchId], references: [id])
+}
+
+
+// MEDIA
+model MediaGallery {
+  id            String     @id @default(uuid())
+  url           String
+  type          MediaType
+  tournamentId  String?
+  teamId        String?
+  playerId      String?
+  matchId       String?
+
+  tournament    Tournament? @relation(fields: [tournamentId], references: [id])
+  // team          Team?       @relation(fields: [teamId], references: [id])
+  // player        Player?     @relation(fields: [playerId], references: [id])
+  // match         Match?      @relation(fields: [matchId], references: [id])
+}
+
+
+// NOTIFICATIONS
+model Notifications {
+  id              String  @id @default(uuid())
+  receiverAdminId String?
+  senderAdminId   String
+  message         String
+  isSent          Boolean @default(false)
+  isAnnouncement   Boolean @default(false)
+
+  sender          Admin   @relation("Sender", fields: [senderAdminId], references: [id])
+  receiver        Admin?   @relation("Receiver", fields: [receiverAdminId], references: [id])
+
 }
