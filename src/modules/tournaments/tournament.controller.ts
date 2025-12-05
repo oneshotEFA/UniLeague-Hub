@@ -11,13 +11,13 @@ export class TournamentController {
     const result = await tournamentService.getTournaments();
 
     if (!result.ok) {
-      return new ApiResponseBuilder().notFound(result.error).build();
+      return new ApiResponseBuilder().notFound(result.error).build(res);
     }
 
     return new ApiResponseBuilder()
       .ok("Tournaments fetched")
       .withData(result.data)
-      .build();
+      .build(res);
   }
 
   // GET SINGLE TOURNAMENT
@@ -27,13 +27,13 @@ export class TournamentController {
     const result = await tournamentService.getTournament(id);
 
     if (!result.ok) {
-      return new ApiResponseBuilder().notFound(result.error).build();
+      return new ApiResponseBuilder().notFound(result.error).build(res);
     }
 
     return new ApiResponseBuilder()
       .ok("Tournament fetched")
       .withData(result.data)
-      .build();
+      .build(res);
   }
 
   // CREATE TOURNAMENT
@@ -43,13 +43,13 @@ export class TournamentController {
   //     const result = await tournamentService.createTournament(data);
 
   //     if (!result.ok) {
-  //       return new ApiResponseBuilder().badRequest(result.error).build();
+  //       return new ApiResponseBuilder().badRequest(result.error).build(res);
   //     }
 
   //     return new ApiResponseBuilder()
   //       .created("Tournament created")
   //       .withData(result.data)
-  //       .build();
+  //       .build(res);
   //   }
 
   // DELETE TOURNAMENT
@@ -65,7 +65,7 @@ export class TournamentController {
   //     return new ApiResponseBuilder()
   //       .ok("Tournament deleted")
   //       .withData(result.data)
-  //       .build();
+  //       .build(res);
   //   }
 
   // UPDATE TOURNAMENT
@@ -75,12 +75,12 @@ export class TournamentController {
   //     const result = await tournamentService.updateTournament(data);
 
   //     if (!result.ok) {
-  //       return new ApiResponseBuilder().badRequest(result.error).build();
+  //       return new ApiResponseBuilder().badRequest(result.error).build(res);
   //     }
 
   //     return new ApiResponseBuilder()
   //       .ok("Tournament updated")
   //       .withData(result.data)
-  //       .build();
+  //       .build(res);
   //   }
 }
