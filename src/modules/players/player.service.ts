@@ -159,5 +159,23 @@ export class AdminService {
       }
     }
 
+    // get players by there teams
+
+    async getPlayerByTeam(teamId: string){
+      try{
+        const players = await this.prismaService.player.findMany({
+          where: { teamId},
+        });
+        return {
+          ok: true,
+          data: players
+        }
+      }catch(error: any){
+        return {
+          ok: false,
+          error: error.message
+        }
+      }
+    }
 
 }
