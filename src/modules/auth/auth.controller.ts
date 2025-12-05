@@ -1,8 +1,9 @@
 import { Request, Response } from "express";
 import { ApiResponseBuilder } from "../../common/utils/ApiResponse";
 import { AuthService } from "./auth.service";
+import { prisma } from "../../config/db";
 
-const authService = new AuthService();
+const authService = new AuthService(prisma);
 
 export class AuthController {
   static async signup(req: Request, res: Response) {
@@ -16,18 +17,12 @@ export class AuthController {
     );
 
     if (!result.ok) {
-      return res
-        .status(400)
-        .json(new ApiResponseBuilder().badRequest(result.error).build());
+      return new ApiResponseBuilder().badRequest(result.error).build();
     }
 
-    return res
-      .status(201)
-      .json(
-        new ApiResponseBuilder()
-          .created("User created")
-          .withData(result.data)
-          .build()
-      );
+    return new ApiResponseBuilder()
+      .created("User created")
+      .withData(result.data)
+      .build();
   }
 }
