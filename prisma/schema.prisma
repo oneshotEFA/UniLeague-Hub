@@ -53,7 +53,7 @@ model Admin {
   username            String           @unique
   accessToken         String?
   refreshToken        String?
-  role                AdminRole
+  role                AdminRole @default(tournamentManager)
   isActive            Boolean @default(true)
 
 
@@ -101,8 +101,8 @@ model Tournament {
   id             String     @id @default(uuid())
   managerId      String
   tournamentName String
-  startingDate   DateTime
-  endingDate     DateTime
+  startingDate   String
+  endingDate     String
   description    String
   venue          String?
   sponsor        String?
@@ -120,7 +120,7 @@ model Tournament {
 model Match {
   id            String       @id @default(uuid())
   tournamentId  String
-  scheduledDate DateTime
+  scheduledDate String
   homeTeamId    String
   awayTeamId    String
   venue         String
