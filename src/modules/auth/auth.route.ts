@@ -1,11 +1,8 @@
-import { prisma } from "../../config/db";
+import { Router } from "express";
+import { AuthController } from "./auth.controller";
 
-export const login = async () => {
-  try {
-    const res = await prisma.admin.findMany();
+const router = Router();
 
-    return "hii";
-  } catch (error) {
-    console.log(error);
-  }
-};
+router.post("/signup", AuthController.signup);
+
+export default router;
