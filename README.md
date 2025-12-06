@@ -1,0 +1,1 @@
+UniLeague Hub is a digital platform designed to modernize how university football tournaments are organized, managed, and presented to students. Today, most tournaments are announced only through Telegram and inconsistent posts, making it hard for students to follow schedules, team information, results, and match updates.

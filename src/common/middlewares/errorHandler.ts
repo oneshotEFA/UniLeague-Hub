@@ -10,11 +10,11 @@ export const errorHandler = (
 ) => {
   console.error("🔥 Error:", err);
 
-  const status = err.status || HttpStatusCode.INTERNAL_SERVER;
+  const status = err.status || HttpStatusCode.INTERNAL_SERVER_ERROR;
 
   const response = new ApiResponseBuilder()
-    .error(status, err.message || "An unexpected error occurred")
-    .build();
+    .badRequest("An unexpected error occurred")
+    .build(res);
 
   return res.status(status).json(response);
 };

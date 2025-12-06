@@ -4,7 +4,7 @@ import { HttpStatusCode } from "../constants/http";
 
 export const notFound = (req: Request, res: Response) => {
   const resData = new ApiResponseBuilder()
-    .error(HttpStatusCode.NOT_FOUND, "Route not found")
-    .build();
+    .notFound("Resource not found")
+    .build(res);
   res.status(404).json(resData);
 };
