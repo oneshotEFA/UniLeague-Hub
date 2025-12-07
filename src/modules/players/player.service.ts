@@ -1,12 +1,29 @@
 import { prisma } from "../../config/db";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-export class AdminService {
+export class PlayerService {
   constructor(private prismaService = prisma) {}
 
   // creating a player
   async createPlayer(name: string, position:string, number: number, teamId: string){
     try{
+
+      if (!name || !position  || number <=0 || !teamId){
+        return {
+          ok: false,
+          error: "Invalid input parameters!!",
+        };
+      }
+
+      const teamExists = await this.prismaService.team.findUnique({
+        where: {id: teamId }
+      });
+      if (!teamExists){
+        return {
+          ok: false,
+          error: "This team does not exist!!"
+        };
+      }
+
+
       const exists = await this.prismaService.player.findFirst({
         where: {teamId, number},
       });
@@ -41,7 +58,7 @@ export class AdminService {
 
   async getPlayers(){
     try{
-      const players = await  this.prismaService.findMany({
+      const players = await  this.prismaService.player.findMany({
         include:{team: true}
       });
       return {
@@ -60,9 +77,10 @@ export class AdminService {
 
   async getPlayerById(id: string){
     try{
-      const player = await this.prismaService.findUnique({
+      const player = await this.prismaService.player.findUnique({
         where: { id },
-        include: {team: true}
+        include: {team:{select:{  teamName:true}}},
+
       });
       if(!player){
         return {
@@ -70,11 +88,32 @@ export class AdminService {
           error: "player not found !!!"
         };
       }
+      const status = await this.prismaService.playerMatchStats.aggregate({
+        where: {playerId: id},
+        _sum: {
+          goals: true,
+          assists: true,
+          yellow: true,
+          red: true,
+          minutes: true,
+        },
+      });
+      
       return {
-        ok : true,
-        data : player
-      }
-    }catch (error: any){
+        ok: true,
+        data: {
+          ...player,
+          totalStatus: {
+            goals: status._sum.goals || 0,
+            assists: status._sum.assists || 0,
+            yellow : status._sum.yellow || 0,
+            red: status._sum.red || 0,
+            minutes: status._sum.minutes || 0,
+          },
+        },
+      };
+      
+    }catch(error: any){
       return {
         ok: false,
         error: error.message
@@ -176,6 +215,33 @@ export class AdminService {
           error: error.message
         }
       }
+    }
+
+    // search player by name
+    async searchPlayerByName(name: string){
+      try{
+        const fineName = name.trim()
+        const playerName = await this.prismaService.player.findMany({
+        where: {name:{contains: fineName, mode: 'insensitive'}}
+          });
+
+          if (playerName.length === 0) {
+            return {
+              ok: false,
+              error: "player not found"
+            }
+          }
+          return {
+            ok: true,
+            data: playerName
+          }
+        }catch(error: any){
+          return{
+             ok: false,
+             error: error.message
+          }
+        }
+      
     }
 
 }
