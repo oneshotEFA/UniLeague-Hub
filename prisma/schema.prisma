@@ -73,6 +73,7 @@ model Player {
   teamId    String
 
   // Relations
+  playerMatchStats PlayerMatchStats[]
   team      Team       @relation(fields: [teamId], references: [id])
   events    MatchEvent[]
   goalScore GoalScorer[]
@@ -82,19 +83,18 @@ model Player {
 
 // TEAM
 model Team {
-  id            String       @id @default(uuid())
-  teamName      String
-  logo          String
-  tournamentId  String
+  id         String     @id @default(uuid())
+  teamName   String
+  logo       String
 
-  // Relations
-  tournament    Tournament   @relation(fields: [tournamentId], references: [id])
-  players       Player[]
-  matchevent   MatchEvent[]
-  homeMatches   Match[]      @relation("HomeTeam")
-  awayMatches   Match[]      @relation("AwayTeam")
+//relation
+  players      Player[]
+  matchEvent   MatchEvent[]
+  homeMatches  Match[]    @relation("HomeTeam")
+  awayMatches  Match[]    @relation("AwayTeam")
+  standings     TournamentStanding[] 
+  tournaments  TournamentTeam[]
 }
-
 
 // TOURNAMENT
 model Tournament {
@@ -107,13 +107,43 @@ model Tournament {
   venue          String?
   sponsor        String?
   status         Status
-
-  // Relations
-  teams          Team[]
-  matches        Match[]
+//relation
   manager        Admin       @relation("ManagedTournaments", fields: [managerId], references: [id])
+  teams          TournamentTeam[]
+  matches        Match[]
+  standings      TournamentStanding[]   
   mediaGallery   MediaGallery[]
 }
+
+// TOURNAMENT TEAM (JUNCTION TABLE)
+model TournamentTeam {
+  id           String    @id @default(uuid())
+  tournamentId String
+  teamId       String
+
+  tournament   Tournament @relation(fields: [tournamentId], references: [id])
+  team         Team       @relation(fields: [teamId], references: [id])
+
+  @@unique([tournamentId, teamId]) // prevent duplicate registrations
+}
+
+model PlayerMatchStats {
+  id        String @id @default(uuid())
+  playerId  String
+  matchId   String
+
+  goals     Int @default(0)
+  assists   Int @default(0)
+  yellow    Int @default(0)
+  red       Int @default(0)
+  minutes   Int @default(0)
+
+  player    Player @relation(fields: [playerId], references: [id])
+  match     Match  @relation(fields: [matchId], references: [id])
+
+  @@unique([playerId, matchId])
+}
+
 
 
 // MATCH
@@ -132,6 +162,7 @@ model Match {
 
 
   // Relations
+  playerMatchStats PlayerMatchStats[]
   tournament    Tournament   @relation(fields: [tournamentId], references: [id])
   homeTeam      Team         @relation("HomeTeam", fields: [homeTeamId], references: [id])
   awayTeam      Team         @relation("AwayTeam", fields: [awayTeamId], references: [id])
@@ -142,7 +173,6 @@ model Match {
   @@unique([homeTeamId, awayTeamId, scheduledDate])
 
 }
-
 
 // MATCH EVENTS
 model MatchEvent {
@@ -222,4 +252,27 @@ model Notifications {
   sender          Admin   @relation("Sender", fields: [senderAdminId], references: [id])
   receiver        Admin?   @relation("Receiver", fields: [receiverAdminId], references: [id])
 
+}
+
+model TournamentStanding {
+  id             String     @id @default(uuid())
+  tournamentId   String
+  teamId         String
+
+  // Standings Metrics
+  played         Int        @default(0)
+  wins           Int        @default(0)
+  draws          Int        @default(0)
+  losses         Int        @default(0)
+  goalsFor       Int        @default(0)
+  goalsAgainst   Int        @default(0)
+  goalDifference Int        @default(0)
+  points         Int        @default(0)
+  rank           Int?
+  form           String? 
+  // Relations
+  tournament     Tournament @relation(fields: [tournamentId], references: [id])
+  team           Team       @relation(fields: [teamId], references: [id])
+
+  @@unique([tournamentId, teamId]) // A team can't have 2 records in same tournament
 }
