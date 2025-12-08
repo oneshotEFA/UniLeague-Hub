@@ -1,19 +1,19 @@
-import { ai } from "../../config/ai";
+import { aiApiCall } from "./utility/common";
 import {
-  KnockoutInput,
-  GroupInput,
+  buildGroupShufflePrompt,
+  buildKnockoutPrompt,
+  buildLeagueShufflePrompt,
+  buildPoster,
+} from "./utility/promptBuilder";
+import {
   Group,
+  GroupInput,
+  KnockoutInput,
+  KnockoutMatch,
   LeagueInput,
   Match,
   MatchWeek,
-  withRetry,
-  KnockoutMatch,
-  aiApiCall,
-  buildKnockoutPrompt,
-  buildGroupShufflePrompt,
-  buildPoster,
-  buildLeagueShufflePrompt,
-} from "./utility";
+} from "./utility/type";
 
 export class FixtureAI {
   static async generateRandomLeagueFixture(input: LeagueInput) {
@@ -66,23 +66,9 @@ export class FixtureAI {
     return await aiApiCall(prompt);
   }
   static async generatePoster(input: any) {
-    return withRetry(async () => {
+    try {
       const prompt = buildPoster(input);
-
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: [prompt],
-      });
-
-      const raw = response.text;
-
-      if (!raw) {
-        throw new Error(
-          "AI returned an empty response (raw text is undefined)."
-        );
-      }
-      return raw;
-    });
+    } catch (error) {}
   }
 
   static async generateGroupStageFixture(input: GroupInput) {
