@@ -81,4 +81,22 @@ export class AIController {
       .withData(result)
       .build(res);
   }
+  static async calculateTeamPower(req: Request, res: Response) {
+    const body = req.body as unknown as any | null;
+    if (!body) {
+      return new ApiResponseBuilder()
+        .badRequest("No input provided")
+        .build(res);
+    }
+    const result = await FixtureAI.generateTeamPower(body);
+
+    if (!result) {
+      return new ApiResponseBuilder().notFound(result).build(res);
+    }
+
+    return new ApiResponseBuilder()
+      .ok("Tournament teams fetched")
+      .withData(result)
+      .build(res);
+  }
 }

@@ -1,6 +1,6 @@
 import { ai } from "../../config/ai";
 import { promises as fs } from "fs";
-import { aiApiCall, downloadImages } from "./utility/common";
+import { aiApiCall, collectTeamStats, downloadImages } from "./utility/common";
 import {
   buildGroupShufflePrompt,
   buildKnockoutPrompt,
@@ -17,6 +17,7 @@ import {
   MatchWeek,
   PosterInput,
 } from "./utility/type";
+import { error } from "console";
 
 export class FixtureAI {
   static async generateRandomLeagueFixture(input: LeagueInput) {
@@ -260,5 +261,38 @@ export class FixtureAI {
 
     const prompt = buildKnockoutPrompt(matches);
     return await aiApiCall(prompt);
+  }
+  static async generateTeamPower(teamId: string) {
+    try {
+      const stats = await collectTeamStats(teamId);
+      if (!stats)
+        return {
+          ok: false,
+          data: null,
+          error: "Not enough match data to evaluate team power.",
+        };
+      const prompt = `
+You are a football analyst AI.
+
+Using this raw team data from the last 5 matches:
+
+${JSON.stringify(stats, null, 2)}
+
+Return ONLY a single number between 0 and 100 representing the team's power.
+Do not write text, do not write explanation, only return the number.
+  `;
+      const power = await aiApiCall(prompt);
+      console.log("power:", power);
+      return {
+        ok: true,
+        data: Number(power),
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        data: null,
+        error: (error as Error).message,
+      };
+    }
   }
 }

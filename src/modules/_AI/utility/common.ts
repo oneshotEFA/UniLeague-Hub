@@ -1,6 +1,7 @@
 import axios from "axios";
 import { ai } from "../../../config/ai";
 import sharp from "sharp";
+import { prisma } from "../../../config/db";
 
 export function safeJsonParse(text: string) {
   try {
@@ -114,3 +115,66 @@ export const aiApiCall = async (prompt: any) => {
     throw new Error(`AI API call failed: ${(error as Error).message}`);
   }
 };
+export async function collectTeamStats(teamId: string) {
+  // 1. Get last 5 matches involving this team
+  const matches = await prisma.match.findMany({
+    where: {
+      OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }],
+      status: "finished",
+    },
+    orderBy: { scheduledDate: "desc" },
+    take: 5,
+  });
+
+  if (matches.length === 0) return null;
+
+  let stats = {
+    goalsFor: 0,
+    goalsAgainst: 0,
+    yellow: 0,
+    red: 0,
+    cleanSheets: 0,
+    last15Goals: 0,
+    points: 0,
+    gdList: [] as number[],
+    streak: 0,
+  };
+
+  for (const match of matches) {
+    const teamIsHome = match.homeTeamId === teamId;
+
+    // goals
+    const gf = teamIsHome ? match.homeScore : match.awayScore;
+    const ga = teamIsHome ? match.awayScore : match.homeScore;
+
+    stats.goalsFor += gf;
+    stats.goalsAgainst += ga;
+    stats.gdList.push(gf - ga);
+
+    // points
+    if (gf > ga) stats.points += 3;
+    else if (gf === ga) stats.points += 1;
+
+    // streak
+    if (gf > ga) stats.streak += 1;
+    else stats.streak = 0;
+
+    // clean sheet
+    if (ga === 0) stats.cleanSheets += 1;
+
+    // events
+    const events = await prisma.matchEvent.findMany({
+      where: { matchId: match.id, eventTeamId: teamId },
+    });
+
+    for (const ev of events) {
+      if (ev.eventType === "Goal" && ev.minute >= 75) {
+        stats.last15Goals += 1;
+      }
+      if (ev.eventType === "Yellow") stats.yellow += 1;
+      if (ev.eventType === "Red") stats.red += 1;
+    }
+  }
+
+  return stats;
+}
