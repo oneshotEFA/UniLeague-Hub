@@ -1,3 +1,4 @@
+import axios from "axios";
 import { ai } from "../../../config/ai";
 
 export function safeJsonParse(text: string) {
@@ -23,6 +24,25 @@ export async function withRetry(fn: () => Promise<any>, retries = 2) {
   }
 
   throw lastError;
+}
+export async function downloadImages(homeUrl: string, awayUrl: string) {
+  try {
+    const homeRes = await axios.get(homeUrl, { responseType: "arraybuffer" });
+    const awayRes = await axios.get(awayUrl, { responseType: "arraybuffer" });
+    console.log("images donwloaded");
+    return {
+      ok: true,
+      homeBuffer: Buffer.from(homeRes.data),
+      awayBuffer: Buffer.from(awayRes.data),
+      homeMime: homeRes.headers["content-type"] || "image/jpeg",
+      awayMime: awayRes.headers["content-type"] || "image/jpeg",
+    };
+  } catch (error) {
+    console.log("download error:", error);
+    return {
+      ok: false,
+    };
+  }
 }
 
 export const aiApiCall = async (prompt: any) => {

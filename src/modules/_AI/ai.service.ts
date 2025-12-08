@@ -1,9 +1,11 @@
-import { aiApiCall } from "./utility/common";
+import { ai } from "../../config/ai";
+import { promises as fs } from "fs";
+import { aiApiCall, downloadImages } from "./utility/common";
 import {
   buildGroupShufflePrompt,
   buildKnockoutPrompt,
   buildLeagueShufflePrompt,
-  buildPoster,
+  buildPosterPrompt,
 } from "./utility/promptBuilder";
 import {
   Group,
@@ -13,6 +15,7 @@ import {
   LeagueInput,
   Match,
   MatchWeek,
+  PosterInput,
 } from "./utility/type";
 
 export class FixtureAI {
@@ -65,10 +68,81 @@ export class FixtureAI {
 
     return await aiApiCall(prompt);
   }
-  static async generatePoster(input: any) {
+  static async generatePoster(input: PosterInput) {
+    // Step 1: Download the images into memory buffers
     try {
-      const prompt = buildPoster(input);
-    } catch (error) {}
+      const res = await downloadImages(input.homeImageUrl, input.awayImageUrl);
+      if (!res.ok) {
+        console.log("hii");
+        return {
+          ok: false,
+          data: null,
+        };
+      }
+      const { homeBuffer, awayBuffer, homeMime, awayMime } = res;
+      // Step 2: Build prompt
+      const prompt = buildPosterPrompt(input);
+      console.log("ai api call started");
+      // Step 3: Call Gemini with inline images
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType: homeMime,
+                  data: homeBuffer?.toString("base64"),
+                },
+              },
+              {
+                inlineData: {
+                  mimeType: awayMime,
+                  data: awayBuffer?.toString("base64"),
+                },
+              },
+            ],
+          },
+        ],
+      });
+      console.log("ai response extraction started");
+      // Extract base64 output
+      const raw =
+        (response as any)?.text ||
+        // 2. New Gemini format: candidates[0].content.parts[]
+        (response as any)?.candidates?.[0]?.content?.parts
+          ?.map((p: any) => p.text || "")
+          .join("") ||
+        // 3. Older fallback formats
+        (response as any)?.candidates
+          ?.map((c: any) => c.outputText || "")
+          .join("") ||
+        "";
+
+      // 4. Validate
+      if (!raw || raw.trim().length === 0) {
+        const reason =
+          (response as any)?.candidates?.[0]?.finishReason || "Unknown";
+
+        throw new Error(
+          `AI returned an empty response. Finish Reason: ${reason}`
+        );
+      }
+
+      // Gemini returns pure base64 (no JSON), so decode
+      const posterBase64 = raw.replace(/(\n|")/g, "").trim();
+      const posterBuffer = Buffer.from(posterBase64, "base64");
+      console.log("done");
+      await fs.writeFile("./poster.png", posterBuffer);
+      return {
+        buffer: posterBuffer,
+        base64: posterBase64,
+      };
+    } catch (error) {
+      console.log("unecpted error cached:", error);
+    }
   }
 
   static async generateGroupStageFixture(input: GroupInput) {

@@ -1,4 +1,4 @@
-import { Group } from "./type";
+import { Group, PosterInput } from "./type";
 
 export function buildLeagueShufflePrompt(fixture: any) {
   return `
@@ -83,22 +83,20 @@ ${JSON.stringify(bracket)}
   `;
 }
 
-export function buildPoster(input: any) {
+export function buildPosterPrompt(input: PosterInput) {
   return `
 Create a professional football match poster.
 
-Inputs:
-- Home Team: Addis Ababa City
-- Away Team: Hawassa United
-- Two player images included in the request
+Home Team: ${input.homeTeam}
+Away Team: ${input.awayTeam}
 
-Requirements:
-- Blend both images in a symmetric composition
-- Put “Addis Ababa City vs Hawassa United” in bold modern typography
-- Add small match detail section at the bottom
-- Use dark blue and red theme
-- Maintain realistic lighting and clean sports poster style
-- Return only the final poster image
-
-    `;
+Instructions:
+- Use the two provided team images
+- Blend them symmetrically
+- Use modern football poster style
+- Add headline: "${input.homeTeam} vs ${input.awayTeam}"
+- Add a small match detail section at the bottom
+- Make color grading cinematic
+- Return ONLY the poster as a base64 PNG. No text, no explanation.
+`.trim();
 }

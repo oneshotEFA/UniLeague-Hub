@@ -1,7 +1,12 @@
 import { Request, Response } from "express";
 import { ApiResponseBuilder } from "../../common/utils/ApiResponse";
 import { FixtureAI } from "./ai.service";
-import { GroupInput, KnockoutInput, LeagueInput } from "./utility";
+import {
+  GroupInput,
+  KnockoutInput,
+  LeagueInput,
+  PosterInput,
+} from "./utility/type";
 
 export class AIController {
   static async getTournamentTeams(req: Request, res: Response) {
@@ -48,6 +53,24 @@ export class AIController {
         .build(res);
     }
     const result = await FixtureAI.generateKnockoutBracket(body);
+
+    if (!result) {
+      return new ApiResponseBuilder().notFound(result).build(res);
+    }
+
+    return new ApiResponseBuilder()
+      .ok("Tournament teams fetched")
+      .withData(result)
+      .build(res);
+  }
+  static async generatePoster(req: Request, res: Response) {
+    const body = req.body as unknown as PosterInput | null;
+    if (!body) {
+      return new ApiResponseBuilder()
+        .badRequest("No input provided")
+        .build(res);
+    }
+    const result = await FixtureAI.generatePoster(body);
 
     if (!result) {
       return new ApiResponseBuilder().notFound(result).build(res);
