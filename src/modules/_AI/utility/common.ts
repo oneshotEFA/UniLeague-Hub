@@ -1,5 +1,6 @@
 import axios from "axios";
 import { ai } from "../../../config/ai";
+import sharp from "sharp";
 
 export function safeJsonParse(text: string) {
   try {
@@ -27,21 +28,37 @@ export async function withRetry(fn: () => Promise<any>, retries = 2) {
 }
 export async function downloadImages(homeUrl: string, awayUrl: string) {
   try {
-    const homeRes = await axios.get(homeUrl, { responseType: "arraybuffer" });
-    const awayRes = await axios.get(awayUrl, { responseType: "arraybuffer" });
-    console.log("images donwloaded");
+    const [homeRes, awayRes] = await Promise.all([
+      axios.get(homeUrl, { responseType: "arraybuffer" }),
+      axios.get(awayUrl, { responseType: "arraybuffer" }),
+    ]);
+
+    console.log("images downloaded");
+
+    const homeRaw = Buffer.from(homeRes.data);
+    const awayRaw = Buffer.from(awayRes.data);
+
+    // 🔥 MUST compress — this is what speeds everything up
+    const homeBuffer = await sharp(homeRaw)
+      .resize(720)
+      .jpeg({ quality: 80 })
+      .toBuffer();
+
+    const awayBuffer = await sharp(awayRaw)
+      .resize(720)
+      .jpeg({ quality: 80 })
+      .toBuffer();
+    console.log("images downloaded and compressed");
     return {
       ok: true,
-      homeBuffer: Buffer.from(homeRes.data),
-      awayBuffer: Buffer.from(awayRes.data),
-      homeMime: homeRes.headers["content-type"] || "image/jpeg",
-      awayMime: awayRes.headers["content-type"] || "image/jpeg",
+      homeBuffer,
+      awayBuffer,
+      homeMime: "image/jpeg",
+      awayMime: "image/jpeg",
     };
   } catch (error) {
-    console.log("download error:", error);
-    return {
-      ok: false,
-    };
+    console.log("download/compress error:", error);
+    return { ok: false };
   }
 }
 
