@@ -86,7 +86,8 @@ model Team {
   id         String     @id @default(uuid())
   teamName   String
   logo       String
-  
+  power Int @default(0)
+
 //relation
   players      Player[]
   matchEvent   MatchEvent[]
