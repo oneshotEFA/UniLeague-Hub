@@ -1,4 +1,5 @@
 import { ai } from "../../config/ai";
+import { prisma } from "../../config/db";
 // import { promises as fs } from "fs";
 import { aiApiCall, collectTeamStats, downloadImages } from "./utility/common";
 import {
@@ -277,7 +278,23 @@ export class FixtureAI {
         };
       const prompt = buildTeamPowerPrompt(stats);
       const power = await aiApiCall(prompt);
-      console.log("power:", power);
+      const prePower = await prisma.team.findUnique({
+        where: { id: teamId },
+        select: { power: true },
+      });
+      const averagedPower = Math.round((prePower + power) / 2);
+      await prisma.team.update({
+        where: { id: teamId },
+        data: { power: averagedPower },
+      });
+
+      if (!power || isNaN(Number(power))) {
+        return {
+          ok: false,
+          data: null,
+          error: "AI returned an invalid power value.",
+        };
+      }
       return {
         ok: true,
         data: Number(power),
