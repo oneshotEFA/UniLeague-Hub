@@ -1,5 +1,5 @@
 import { ai } from "../../config/ai";
-import { promises as fs } from "fs";
+// import { promises as fs } from "fs";
 import { aiApiCall, collectTeamStats, downloadImages } from "./utility/common";
 import {
   buildGroupShufflePrompt,
@@ -18,7 +18,6 @@ import {
   MatchWeek,
   PosterInput,
 } from "./utility/type";
-import { error } from "console";
 
 export class FixtureAI {
   static async generateRandomLeagueFixture(input: LeagueInput) {
@@ -137,7 +136,7 @@ export class FixtureAI {
       const posterBase64 = raw.replace(/(\n|")/g, "").trim();
       const posterBuffer = Buffer.from(posterBase64, "base64");
       console.log("done");
-      await fs.writeFile("./poster.png", posterBuffer);
+
       return {
         buffer: posterBuffer,
         base64: posterBase64,
@@ -148,7 +147,7 @@ export class FixtureAI {
   }
 
   static async generateGroupStageFixture(input: GroupInput) {
-    const { teams, teamsPerGroup, rounds = 1 } = input;
+    var { teams, teamsPerGroup, rounds = 1 } = input;
 
     if (teams.length < teamsPerGroup) {
       throw new Error("Number of teams is less than teams per group.");
