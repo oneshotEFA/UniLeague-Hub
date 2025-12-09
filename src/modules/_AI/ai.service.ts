@@ -7,6 +7,7 @@ import {
   buildKnockoutPrompt,
   buildLeagueShufflePrompt,
   buildPosterPrompt,
+  buildPredictionPrompt,
   buildTeamPowerPrompt,
 } from "./utility/promptBuilder";
 import {
@@ -305,6 +306,42 @@ export class FixtureAI {
         data: null,
         error: (error as Error).message,
       };
+    }
+  }
+  static async predictMatchOutcome(matchId: string) {
+    try {
+      const teams = await prisma.match.findUnique({
+        where: { id: matchId },
+        select: {
+          homeTeam: { select: { id: true, teamName: true } },
+          awayTeam: { select: { id: true, teamName: true } },
+        },
+      });
+      if (!teams) {
+        return {
+          ok: false,
+          data: null,
+          error: "Match not found.",
+        };
+      }
+      const homePower = await prisma.team.findUnique({
+        where: { id: teams.homeTeam.id },
+        select: { power: true },
+      });
+      const awayPower = await prisma.team.findUnique({
+        where: { id: teams.awayTeam.id },
+        select: { power: true },
+      });
+
+      const prompt = buildPredictionPrompt({
+        homeTeam: teams.homeTeam.teamName,
+        awayTeam: teams.awayTeam.teamName,
+        homePower: homePower ? homePower.power : 0,
+        awayPower: awayPower ? awayPower.power : 0,
+      });
+      return await aiApiCall(prompt);
+    } catch (error) {
+      console.log("error:", error);
     }
   }
 }

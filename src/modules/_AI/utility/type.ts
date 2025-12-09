@@ -70,3 +70,9 @@ export type PosterInput = {
   homeImageUrl: string;
   awayImageUrl: string;
 };
+export type PredictInput = {
+  homeTeam: string;
+  awayTeam: string;
+  homePower: number;
+  awayPower: number;
+};

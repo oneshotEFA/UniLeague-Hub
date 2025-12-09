@@ -99,4 +99,22 @@ export class AIController {
       .withData(result)
       .build(res);
   }
+  static async predictMatch(req: Request, res: Response) {
+    const id = (req.params as { id?: string }).id;
+    if (!id) {
+      return new ApiResponseBuilder()
+        .badRequest("No match id provided")
+        .build(res);
+    }
+    const result = await FixtureAI.predictMatchOutcome(id);
+
+    if (!result) {
+      return new ApiResponseBuilder().notFound(result).build(res);
+    }
+
+    return new ApiResponseBuilder()
+      .ok("Tournament teams fetched")
+      .withData(result)
+      .build(res);
+  }
 }

@@ -1,4 +1,4 @@
-import { Group, PosterInput } from "./type";
+import { Group, PosterInput, PredictInput } from "./type";
 
 export function buildLeagueShufflePrompt(fixture: any) {
   return `
@@ -109,4 +109,38 @@ ${JSON.stringify(input, null, 2)}
 
 Return ONLY a single number between 0 and 100 representing the team's power.
 Do not write text, do not write explanation, only return the number.`;
+}
+
+export function buildPredictionPrompt(input: PredictInput) {
+  return `
+You are a football match prediction expert. 
+Analyze the teams based on their performance power rating:
+
+- Home Team: ${input.homeTeam}
+- Home Team Power: ${input.homePower}
+
+- Away Team: ${input.awayTeam}
+- Away Team Power: ${input.awayPower}
+
+Use the power ratings to estimate the probability of:
+1. Home Win
+2. Draw
+3. Away Win
+
+Guidelines:
+- Higher power means stronger performance.
+- Home advantage should increase home win probability slightly (5–10%).
+- Ensure the percentages always total exactly 100%.
+- Provide a short reasoning based only on the given power values.
+- Keep the output objective and analytical.
+
+Return the response in strictly this JSON structure:
+
+{
+  "homeWin": number,    // percentage
+  "draw": number,       // percentage
+  "awayWin": number,    // percentage
+  "analysis": "short explanation"
+}
+  `;
 }
