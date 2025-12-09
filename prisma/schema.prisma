@@ -175,7 +175,6 @@ model Match {
 
 }
 
-
 // MATCH EVENTS
 model MatchEvent {
   id          String     @id @default(ulid())
@@ -278,4 +277,3 @@ model TournamentStanding {
 
   @@unique([tournamentId, teamId]) // A team can't have 2 records in same tournament
 }
-
