@@ -18,7 +18,7 @@ export class AuthController {
     if (!result.ok) {
       return res
         .status(400)
-        .json(new ApiResponseBuilder().badRequest(result.error).build());
+        .json(new ApiResponseBuilder().badRequest(result.error).build(res));
     }
 
     return res
@@ -27,7 +27,7 @@ export class AuthController {
         new ApiResponseBuilder()
           .created("User created")
           .withData(result.data)
-          .build()
+          .build(res)
       );
   }
 }
