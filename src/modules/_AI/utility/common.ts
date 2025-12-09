@@ -116,7 +116,6 @@ export const aiApiCall = async (prompt: any) => {
   }
 };
 export async function collectTeamStats(teamId: string) {
-  // 1. Get last 5 matches involving this team
   const matches = await prisma.match.findMany({
     where: {
       OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }],
@@ -126,55 +125,53 @@ export async function collectTeamStats(teamId: string) {
     take: 5,
   });
 
-  if (matches.length === 0) return null;
+  if (!matches.length) return null;
 
-  let stats = {
-    goalsFor: 0,
-    goalsAgainst: 0,
-    yellow: 0,
-    red: 0,
-    cleanSheets: 0,
-    last15Goals: 0,
-    points: 0,
-    gdList: [] as number[],
-    streak: 0,
-  };
+  const matchIds = matches.map((m) => m.id);
 
-  for (const match of matches) {
-    const teamIsHome = match.homeTeamId === teamId;
+  const events = await prisma.matchEvent.findMany({
+    where: { matchId: { in: matchIds }, eventTeamId: teamId },
+  });
 
-    // goals
-    const gf = teamIsHome ? match.homeScore : match.awayScore;
-    const ga = teamIsHome ? match.awayScore : match.homeScore;
+  let streak = 0;
+  let lastStreak = true;
 
-    stats.goalsFor += gf;
-    stats.goalsAgainst += ga;
-    stats.gdList.push(gf - ga);
+  const stats = matches.reduce(
+    (acc, m) => {
+      const home = m.homeTeamId === teamId;
+      const gf = home ? m.homeScore : m.awayScore;
+      const ga = home ? m.awayScore : m.homeScore;
 
-    // points
-    if (gf > ga) stats.points += 3;
-    else if (gf === ga) stats.points += 1;
+      acc.goalsFor += gf;
+      acc.goalsAgainst += ga;
+      acc.gdList.push(gf - ga);
 
-    // streak
-    if (gf > ga) stats.streak += 1;
-    else stats.streak = 0;
+      acc.points += gf > ga ? 3 : gf === ga ? 1 : 0;
 
-    // clean sheet
-    if (ga === 0) stats.cleanSheets += 1;
+      if (lastStreak && gf > ga) streak++;
+      else lastStreak = false;
 
-    // events
-    const events = await prisma.matchEvent.findMany({
-      where: { matchId: match.id, eventTeamId: teamId },
-    });
+      if (ga === 0) acc.cleanSheets++;
 
-    for (const ev of events) {
-      if (ev.eventType === "Goal" && ev.minute >= 75) {
-        stats.last15Goals += 1;
-      }
-      if (ev.eventType === "Yellow") stats.yellow += 1;
-      if (ev.eventType === "Red") stats.red += 1;
+      return acc;
+    },
+    {
+      goalsFor: 0,
+      goalsAgainst: 0,
+      yellow: 0,
+      red: 0,
+      cleanSheets: 0,
+      last15Goals: 0,
+      points: 0,
+      gdList: [] as number[],
     }
+  );
+
+  for (const ev of events) {
+    if (ev.eventType === "Goal" && ev.minute >= 75) stats.last15Goals++;
+    if (ev.eventType === "Yellow") stats.yellow++;
+    if (ev.eventType === "Red") stats.red++;
   }
 
-  return stats;
+  return { ...stats, streak };
 }

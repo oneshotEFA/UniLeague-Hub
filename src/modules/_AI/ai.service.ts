@@ -44,7 +44,7 @@ export class FixtureAI {
       for (let week = 0; week < weeksPerRound; week++) {
         const matches: Match[] = [];
 
-        for (let i = 0; i < totalTeams / 2; i++) {
+        for (let i = 0; i < matchesPerWeek; i++) {
           const home = teamsCopy[i];
           const away = teamsCopy[totalTeams - 1 - i];
 
@@ -147,52 +147,56 @@ export class FixtureAI {
   }
 
   static async generateGroupStageFixture(input: GroupInput) {
-    var { teams, teamsPerGroup, rounds = 1 } = input;
+    try {
+      var { teams, teamsPerGroup, rounds = 1 } = input;
 
-    if (teams.length < teamsPerGroup) {
-      throw new Error("Number of teams is less than teams per group.");
-    }
+      if (teams.length < teamsPerGroup) {
+        throw new Error("Number of teams is less than teams per group.");
+      }
 
-    // 1. Shuffle input teams to randomize group placement
-    const shuffled = [...teams].sort(() => Math.random() - 0.5);
+      // 1. Shuffle input teams to randomize group placement
+      const shuffled = [...teams].sort(() => Math.random() - 0.5);
 
-    // 2. Split teams into groups
-    const groups: Group[] = [];
-    let groupIndex = 0;
+      // 2. Split teams into groups
+      const groups: Group[] = [];
+      let groupIndex = 0;
 
-    for (let i = 0; i < shuffled.length; i += teamsPerGroup) {
-      const groupTeams = shuffled.slice(i, i + teamsPerGroup);
-      if (groupTeams.length < teamsPerGroup) break;
+      for (let i = 0; i < shuffled.length; i += teamsPerGroup) {
+        const groupTeams = shuffled.slice(i, i + teamsPerGroup);
+        if (groupTeams.length < teamsPerGroup) break;
 
-      groups.push({
-        groupName: `Group ${String.fromCharCode(65 + groupIndex)}`,
-        teams: groupTeams,
-        fixtures: [],
-      });
+        groups.push({
+          groupName: `Group ${String.fromCharCode(65 + groupIndex)}`,
+          teams: groupTeams,
+          fixtures: [],
+        });
 
-      groupIndex++;
-    }
+        groupIndex++;
+      }
 
-    // 3. Generate fixtures: each team plays each team in the group
-    for (const group of groups) {
-      const t = group.teams;
+      // 3. Generate fixtures: each team plays each team in the group
+      for (const group of groups) {
+        const t = group.teams;
 
-      for (let r = 0; r < rounds; r++) {
-        for (let i = 0; i < t.length; i++) {
-          for (let j = i + 1; j < t.length; j++) {
-            group.fixtures.push({
-              homeTeamId: t[i].id,
-              awayTeamId: t[j].id,
-              group: group.groupName,
-            });
+        for (let r = 0; r < rounds; r++) {
+          for (let i = 0; i < t.length; i++) {
+            for (let j = i + 1; j < t.length; j++) {
+              group.fixtures.push({
+                homeTeamId: t[i].id,
+                awayTeamId: t[j].id,
+                group: group.groupName,
+              });
+            }
           }
         }
       }
+
+      const prompt = buildGroupShufflePrompt(groups);
+
+      return await aiApiCall(prompt);
+    } catch (error) {
+      console.log("error:", error);
     }
-
-    const prompt = buildGroupShufflePrompt(groups);
-
-    return await aiApiCall(prompt);
   }
 
   static async generateKnockoutBracket(input: KnockoutInput) {
