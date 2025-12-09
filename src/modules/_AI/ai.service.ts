@@ -6,6 +6,7 @@ import {
   buildKnockoutPrompt,
   buildLeagueShufflePrompt,
   buildPosterPrompt,
+  buildTeamPowerPrompt,
 } from "./utility/promptBuilder";
 import {
   Group,
@@ -271,16 +272,7 @@ export class FixtureAI {
           data: null,
           error: "Not enough match data to evaluate team power.",
         };
-      const prompt = `
-You are a football analyst AI.
-
-Using this raw team data from the last 5 matches:
-
-${JSON.stringify(stats, null, 2)}
-
-Return ONLY a single number between 0 and 100 representing the team's power.
-Do not write text, do not write explanation, only return the number.
-  `;
+      const prompt = buildTeamPowerPrompt(stats);
       const power = await aiApiCall(prompt);
       console.log("power:", power);
       return {

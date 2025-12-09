@@ -100,3 +100,13 @@ Instructions:
 - Return ONLY the poster as a base64 PNG. No text, no explanation.
 `.trim();
 }
+export function buildTeamPowerPrompt(input: any) {
+  return `You are a football analyst AI.
+
+Using this raw team data from the last 5 matches:
+
+${JSON.stringify(input, null, 2)}
+
+Return ONLY a single number between 0 and 100 representing the team's power.
+Do not write text, do not write explanation, only return the number.`;
+}
