@@ -18,5 +18,11 @@ export interface UpdateTournament {
   description?: string;
   venue?: string;
   sponsor?: string;
-  status: Status;
+  status?: Status;
+}
+export interface fixtureMatchesType {
+  homeTeam: string;
+  awayTeam: string;
+  scheduleDate: string;
+  week: number;
 }

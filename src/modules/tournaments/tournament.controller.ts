@@ -36,51 +36,65 @@ export class TournamentController {
       .build(res);
   }
 
-  // CREATE TOURNAMENT
-  //   static async createTournament(req: Request, res: Response) {
-  //     const data = req.body;
+  // GET TEAMS IN TOURNAMENT
+  static async getTournamentTeams(req: Request, res: Response) {
+    const { tournamentId } = req.params;
+    const result = await tournamentService.getTournamentTeams(tournamentId);
 
-  //     const result = await tournamentService.createTournament(data);
+    if (!result.ok) {
+      return new ApiResponseBuilder().notFound(result.error).build(res);
+    }
 
-  //     if (!result.ok) {
-  //       return new ApiResponseBuilder().badRequest(result.error).build(res);
-  //     }
+    return new ApiResponseBuilder()
+      .ok("Tournament teams fetched")
+      .withData(result.data)
+      .build(res);
+  }
 
+  // GET FIXTURES FOR TOURNAMENT
+  static async getTournamentFixtures(req: Request, res: Response) {
+    const { tournamentId } = req.params;
+    const result = await tournamentService.getTournamentFixtures(tournamentId);
+
+    if (!result.ok) {
+      return new ApiResponseBuilder().notFound(result.error).build(res);
+    }
+
+    return new ApiResponseBuilder()
+      .ok("Tournament fixtures fetched")
+      .withData(result.data)
+      .build(res);
+  }
+
+  // GET TOURNAMENT STANDINGS
+  static async getTournamentStandings(req: Request, res: Response) {
+    const { tournamentId } = req.params;
+    const result = await tournamentService.getTournamentStandings(tournamentId);
+
+    if (!result.ok) {
+      return new ApiResponseBuilder().notFound(result.error).build(res);
+    }
+
+    return new ApiResponseBuilder()
+      .ok("Tournament standings fetched")
+      .withData(result.data)
+      .build(res);
+  }
+
+  // GET TOURNAMENT SUMMARY
+  // static async getTournamentSummary(req: Request, res: Response) {
+  //   const { tournamentId } = req.params;
+  //   const result = await tournamentService.getTournamentSummary(tournamentId);
+
+  //   if (!result.ok) {
   //     return new ApiResponseBuilder()
-  //       .created("Tournament created")
-  //       .withData(result.data)
+  //       .notFound(result.error || "No summary available")
   //       .build(res);
   //   }
 
-  // DELETE TOURNAMENT
-  //   static async deleteTournament(req: Request, res: Response) {
-  //     const { id } = req.params;
-
-  //     const result = await tournamentService.deleteTournament(id);
-
-  //     if (!result.ok) {
-  //       return new ApiResponseBuilder().badRequest(result.error).build();
-  //     }
-
-  //     return new ApiResponseBuilder()
-  //       .ok("Tournament deleted")
-  //       .withData(result.data)
-  //       .build(res);
-  //   }
-
-  // UPDATE TOURNAMENT
-  //   static async updateTournament(req: Request, res: Response) {
-  //     const data = req.body; // includes id and update fields
-
-  //     const result = await tournamentService.updateTournament(data);
-
-  //     if (!result.ok) {
-  //       return new ApiResponseBuilder().badRequest(result.error).build(res);
-  //     }
-
-  //     return new ApiResponseBuilder()
-  //       .ok("Tournament updated")
-  //       .withData(result.data)
-  //       .build(res);
-  //   }
+  //   return new ApiResponseBuilder()
+  //     .ok("Tournament summary fetched")
+  //     .withData(result.data)
+  //     .build(res);
+  // }
 }
