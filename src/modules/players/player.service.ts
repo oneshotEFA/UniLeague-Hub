@@ -56,10 +56,11 @@ export class PlayerService {
 
       // getting all players 
 
-  async getPlayers(){
+  async getPlayers( teamId:string ){
     try{
       const players = await  this.prismaService.player.findMany({
-        include:{team: true}
+        where: {teamId},
+        include:{team:{select: {teamName: true}}}
       });
       return {
         ok: true,
