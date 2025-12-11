@@ -1,3 +1,4 @@
+import { Prisma } from "../../../generated/prisma";
 import { prisma } from "../../config/db";
 export class TeamService {
   constructor(private PrismaService= prisma) {}
@@ -42,7 +43,7 @@ export class TeamService {
   }
 
   // update team
-  async updateTeam(id: string, data: any){
+  async updateTeam(id: string, data: Prisma.TeamUpdateInput){
 
     try {
       if (!id) {
@@ -51,7 +52,7 @@ export class TeamService {
           error: "invalid parameter"
         };
       };
-      //any should be avoidid plus the update need to be safe 
+      
       const update = await this.PrismaService.team.update({
         where: {id},
         data
@@ -124,7 +125,40 @@ export class TeamService {
     }
   }
 
+  // get team be Id
 
+  async getTeamById(id: string){
 
+    try{
+      if (!id){
+        return{
+          ok: false,
+          error: "id requierd"
+        }
+      }
+      const check = await this.PrismaService.team.findUnique({
+        where: { id }
+      });
+      if (!check){
+        return{
+          ok: false,
+          error: "no team found"
+        }
+      }
+      const getTeam = await this.PrismaService.team.findUnique({
+        where: { id }
+      });
+      return {
+        ok: true,
+        data: getTeam
+      }
+    }catch (error: any){
+      return {
+        ok: false,
+        error: error.message
+      }
+    }
+  }
 
+  
 }
