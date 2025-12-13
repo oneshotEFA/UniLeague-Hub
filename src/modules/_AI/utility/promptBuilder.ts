@@ -1,4 +1,9 @@
-import { Group, PosterInput, PredictInput } from "./type";
+import {
+  Group,
+  PosterInput,
+  PredictInput,
+  TransferAnnouncementInput,
+} from "./type";
 
 export function buildLeagueShufflePrompt(fixture: any) {
   return `
@@ -143,4 +148,26 @@ Return the response in strictly this JSON structure:
   "analysis": "short explanation"
 }
   `;
+}
+export function buildTransferAnnouncementPrompt(
+  input: TransferAnnouncementInput
+) {
+  return `
+Write a short football transfer announcement.
+Style: exciting, professional, social-media ready.
+
+Player: ${input.playerName}
+Position: ${input.position}
+From: ${input.fromTeam}
+To: ${input.toTeam}
+
+Example tone:
+"Here we go! ..."
+
+
+Return the response in strictly this JSON structure:
+{
+  "announcement": "string"
+}
+`;
 }

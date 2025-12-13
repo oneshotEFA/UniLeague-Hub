@@ -76,3 +76,9 @@ export type PredictInput = {
   homePower: number;
   awayPower: number;
 };
+export type TransferAnnouncementInput = {
+  playerName: string;
+  position: string;
+  fromTeam: string;
+  toTeam: string;
+};

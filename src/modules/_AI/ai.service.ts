@@ -9,6 +9,7 @@ import {
   buildPosterPrompt,
   buildPredictionPrompt,
   buildTeamPowerPrompt,
+  buildTransferAnnouncementPrompt,
 } from "./utility/promptBuilder";
 import {
   Group,
@@ -19,6 +20,7 @@ import {
   Match,
   MatchWeek,
   PosterInput,
+  TransferAnnouncementInput,
 } from "./utility/type";
 
 export class FixtureAI {
@@ -339,6 +341,14 @@ export class FixtureAI {
         homePower: homePower ? homePower.power : 0,
         awayPower: awayPower ? awayPower.power : 0,
       });
+      return await aiApiCall(prompt);
+    } catch (error) {
+      console.log("error:", error);
+    }
+  }
+  static async generateTransferAnnouncement(input: TransferAnnouncementInput) {
+    try {
+      const prompt = buildTransferAnnouncementPrompt(input);
       return await aiApiCall(prompt);
     } catch (error) {
       console.log("error:", error);

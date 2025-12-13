@@ -10,5 +10,6 @@ router.post("/generate-knockout", AIController.getKnockOutTeam);
 router.post("/generate-poster", AIController.generatePoster);
 router.post("/generate-power", AIController.calculateTeamPower);
 router.get("/predict-match/:id", AIController.predictMatch);
+router.post("/generate-anaoucment", AIController.generateAnaoucment);
 
 export default router;
