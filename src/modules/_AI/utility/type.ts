@@ -82,3 +82,10 @@ export type TransferAnnouncementInput = {
   fromTeam: string;
   toTeam: string;
 };
+export type TournamentAnnouncementInput = {
+  name: string;
+  startDate: string;
+  location?: string;
+  organizer?: string;
+  extraInfo?: string; // registration open, prize, age group, etc.
+};
