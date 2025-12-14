@@ -1,5 +1,7 @@
 import express, { Express, Request, Response } from "express";
 import apiRouter from "./router";
+//import any listener u add in the event so it get register before it emits
+import "./events/listeners";
 const app: Express = express();
 const port = 3000;
 app.use(express.json());
