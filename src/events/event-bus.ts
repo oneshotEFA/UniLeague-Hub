@@ -11,7 +11,11 @@ export class EventBus {
 
   emit<T>(event: string, payload: T) {
     const handlers = this.listeners.get(event) || [];
-    handlers.forEach((handler) => handler(payload));
+    for (const handler of handlers) {
+      Promise.resolve(handler(payload)).catch((err) => {
+        console.error(`Error in event "${event}" handler:`, err);
+      });
+    }
   }
 }
 
