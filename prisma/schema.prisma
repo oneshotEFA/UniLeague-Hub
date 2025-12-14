@@ -84,7 +84,7 @@ model Player {
 // TEAM
 model Team {
   id         String     @id @default(uuid())
-  teamName   String
+  teamName   String     @unique
   logo       String
   power Int @default(0)
 
