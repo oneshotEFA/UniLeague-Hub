@@ -1,14 +1,19 @@
 import { Prisma } from "../../../generated/prisma";
 import { prisma } from "../../config/db";
+import { CloudinaryService } from "../../common/constants/cloudinary";
+
 export class TeamService {
-  constructor(private PrismaService= prisma) {}
+  constructor(
+    private PrismaService= prisma,
+    private cloudinaryService: CloudinaryService
+  ) {}
 
-  // create team
-  async createTeam(teamName: string, logo: string){
-
+  // upload image(logo) to the cloudinary cloud create team
+  async createTeam(teamName: string, logo: Express.Multer.File){
+    
     try{
       if ( !teamName || !logo ){
-        return {
+        return {  
           ok: false,
           error: "Team name and logo is required"
         };
@@ -22,12 +27,13 @@ export class TeamService {
           error: "there is a team with this name!!!"
         }
       }
-      //logo need to be stored in the cloudnary and the url is going to saved need fucntion to store the image and it retunr the public url of that image 
+     
+      const logoUrl = await this.cloudinaryService.upload(logo.buffer,"teamLogo");
       
       const team = await this.PrismaService.team.create({
         data: {
           teamName,
-          logo
+          logo: logoUrl
         }
       });
       return {
@@ -70,6 +76,7 @@ export class TeamService {
 
   }
 
+
   // remove team
   async removeTeam(id: string){
     try{
@@ -96,6 +103,7 @@ export class TeamService {
       }
     }
   }
+
 
   // search team 
   async searchTeamByName(teamName: string){
