@@ -355,7 +355,7 @@ export class TournamentService {
     try {
       await this.prismaService.tournament.update({
         where: { id },
-        data: { status: "finished" },
+        data: { status: "COMPLETED" },
       });
       return {
         ok: true,
