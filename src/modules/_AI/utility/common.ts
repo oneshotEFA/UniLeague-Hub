@@ -119,7 +119,7 @@ export async function collectTeamStats(teamId: string) {
   const matches = await prisma.match.findMany({
     where: {
       OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }],
-      status: "finished",
+      status: "FINISHED",
     },
     orderBy: { scheduledDate: "desc" },
     take: 5,
