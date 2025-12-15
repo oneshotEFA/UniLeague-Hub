@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { ApiResponseBuilder } from "../utils/ApiResponse";
-import { HttpStatusCode } from "../constants/http";
+import { ApiResponseBuilder } from "../common/utils/ApiResponse";
+import { HttpStatusCode } from "../common/constants/http";
 
 export const errorHandler = (
   err: any,
