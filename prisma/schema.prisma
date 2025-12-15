@@ -76,6 +76,7 @@ model Admin {
   username  String @unique
   fullName  String
   password  String
+  refreshToken String?
   role      AdminRole @default(tournamentManager)
   isActive  Boolean   @default(true)
 
@@ -236,6 +237,8 @@ model GoalScorer {
 
   match     Match       @relation(fields: [matchId], references: [id], onDelete: Cascade)
   player    Player      @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([playerId,matchId])
 }
 
 
@@ -255,6 +258,8 @@ model MatchStats {
   cornersAway    Int?
 
   match          Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([matchId])
 }
 
 
