@@ -1,11 +1,12 @@
 import { Prisma } from "../../../generated/prisma";
 import { prisma } from "../../config/db";
 import { CloudinaryService } from "../../common/constants/cloudinary";
-
+import { GalleryService } from "../gallery/gallery.service"
 export class TeamService {
   constructor(
     private PrismaService= prisma,
-    private cloudinaryService: CloudinaryService
+    private cloudinaryService: CloudinaryService,
+    private galleryService: GalleryService
   ) {}
 
   // upload image(logo) to the cloudinary cloud create team
@@ -27,18 +28,27 @@ export class TeamService {
           error: "there is a team with this name!!!"
         }
       }
-     
-      const logoUrl = await this.cloudinaryService.upload(logo.buffer,"teamLogo");
       
       const team = await this.PrismaService.team.create({
         data: {
-          teamName,
-          logo: logoUrl
+          teamName
         }
       });
+
+      const logoSaved = await this.galleryService.savePicture(
+        logo.buffer,
+        team.id,
+        "TEAM",
+        "LOGO",
+        true
+      );
+
       return {
         ok: true,
-        data: team
+        data: {
+          team, 
+          logo: logoSaved.data?.url
+        }
       }
     }catch (error: any){
       return {
@@ -49,7 +59,7 @@ export class TeamService {
   }
 
   // update team
-  async updateTeam(id: string, data: Prisma.TeamUpdateInput){
+  async updateTeam(id: string, data: Prisma.TeamUpdateInput, logo: Express.Multer.File){
 
     try {
       if (!id) {
@@ -63,6 +73,7 @@ export class TeamService {
         where: {id},
         data
       });
+
       return {
         ok: true,
         data: update
@@ -166,6 +177,99 @@ export class TeamService {
         error: error.message
       }
     }
+  }
+
+  // team stastics
+  async teamStatus(id: string){
+    try{
+    if (!id) {
+      return {
+        ok: false,
+        error: "teamid is required"
+      }
+    }
+    const check = await this.PrismaService.team.findUnique({
+      where: {id: id}
+    });
+    if (!check){
+      return {
+        ok: false,
+        error: "team does not exist"
+      }
+    }
+    const matches = await this.PrismaService.match.findMany({
+      where: {
+        status: "FINISHED",
+        OR: [
+          { homeTeamId: id},
+          { awayTeamId: id}
+        ]
+      }
+    });
+
+    let wins = 0;
+    let draws = 0;
+    let losses = 0;
+    let goalsFor = 0;
+    let goalsAgainst = 0;
+
+    for (const match of matches) {
+      const home = match.homeTeamId === id;
+
+      const scored = home ? match.homeScore : match.awayScore;
+      const conceded = home ? match.awayScore: match.homeScore;
+
+      goalsFor += scored;
+      goalsAgainst += conceded;
+
+      if (scored > conceded){
+        wins ++;
+      }
+      else if (scored === conceded){
+        draws ++;
+      }
+      else {
+        losses ++;
+      }
+
+    }
+
+    const cards = await this.PrismaService.matchEvent.groupBy({
+      by: ["eventType"],
+      where: {
+        eventTeamId: id,
+        eventType: {in: ["Yellow", "Red"]}
+      },
+      _count: true
+    })
+
+    const yellowCards = cards.find(check => check.eventType ==="Yellow")?._count ?? 0;
+    const readCards = cards.find(check => check.eventType === "Red")?._count ?? 0; 
+
+    return {
+      ok: true,
+      data: {
+        id,
+        teamName: check.teamName,
+        matchesPlayed: matches.length,
+        wins,
+        draws,
+        losses,
+        goalsFor,
+        goalsAgainst,
+        goalDifference: goalsFor - goalsAgainst,
+        yellowCards,
+        readCards
+      }
+    };
+
+  }catch(error: any){
+    return {
+      ok: false,
+      error: error.message
+    };
+  }
+
   }
 
   
