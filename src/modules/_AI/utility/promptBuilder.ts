@@ -1,9 +1,4 @@
-import {
-  Group,
-  PosterInput,
-  PredictInput,
-  TransferAnnouncementInput,
-} from "./type";
+import { Group, PosterInput, PredictInput } from "./type";
 
 export function buildLeagueShufflePrompt(fixture: any) {
   return `
@@ -148,56 +143,4 @@ Return the response in strictly this JSON structure:
   "analysis": "short explanation"
 }
   `;
-}
-export function buildTransferAnnouncementPrompt(
-  input: TransferAnnouncementInput
-) {
-  return `
-Write a short football transfer announcement.
-Style: exciting, professional, social-media ready.
-
-Player: ${input.playerName}
-Position: ${input.position}
-From: ${input.fromTeam}
-To: ${input.toTeam}
-
-Example tone:
-"Here we go! ..."
-
-
-Return the response in strictly this JSON structure:
-{
-  "announcement": "string"
-}
-`;
-}
-export function buildAnnouncementPrompt(input: any) {
-  return `
-You are writing an official announcement for a football tournament on a sports management platform.
-
-Tone & Style:
-- Professional
-- Exciting
-- Clear and engaging
-- Suitable for in-app announcements and social media
-
-Tournament Details:
-- Tournament Name: ${input.name}
-- Start Date: ${input.startDate}
-${input.location ? `- Location: ${input.location}` : ""}
-${input.organizer ? `- Organizer: ${input.organizer}` : ""}
-${input.extraInfo ? `- Additional Info: ${input.extraInfo}` : ""}
-
-Instructions:
-- Write a short announcement (2–4 sentences)
-- Do NOT use emojis
-- Do NOT include hashtags
-- Do NOT add extra explanations
-- Focus on excitement and clarity
-
-Return the response in strictly the following JSON format:
-{
-  "announcement": "string"
-}
-`;
 }

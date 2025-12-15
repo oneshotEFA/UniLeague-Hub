@@ -76,16 +76,3 @@ export type PredictInput = {
   homePower: number;
   awayPower: number;
 };
-export type TransferAnnouncementInput = {
-  playerName: string;
-  position: string;
-  fromTeam: string;
-  toTeam: string;
-};
-export type TournamentAnnouncementInput = {
-  name: string;
-  startDate: string;
-  location?: string;
-  organizer?: string;
-  extraInfo?: string; // registration open, prize, age group, etc.
-};
