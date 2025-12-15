@@ -1,8 +1,6 @@
 import { error } from "console";
 import { prisma } from "../../config/db";
 import { fixtureMatchesType, tournament, UpdateTournament } from "./utility";
-import { eventBus } from "../../events/event-bus";
-import { TOURNAMENT_ANNOUNCEMENT } from "../../events/events";
 
 export class TournamentService {
   constructor(private prismaService = prisma) {}
@@ -57,17 +55,8 @@ export class TournamentService {
         select: {
           id: true,
           tournamentName: true,
-          startingDate: true,
-          description: true,
-          sponsor: true,
           manager: { select: { fullName: true } },
         },
-      });
-      eventBus.emit(TOURNAMENT_ANNOUNCEMENT, {
-        name: res.tournamentName,
-        startDate: res.startingDate,
-        organizer: res.sponsor,
-        extraInfo: res.description,
       });
       return {
         ok: true,
@@ -355,7 +344,7 @@ export class TournamentService {
     try {
       await this.prismaService.tournament.update({
         where: { id },
-        data: { status: "COMPLETED" },
+        data: { status: "finished" },
       });
       return {
         ok: true,

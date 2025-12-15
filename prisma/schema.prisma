@@ -16,26 +16,12 @@ enum AdminRole {
   tournamentManager
   superAdmin
 }
-enum TournamentStatus {
-  UPCOMING
-  ONGOING
-  COMPLETED
-}
 
-enum MatchStatus {
-  SCHEDULED
-  LIVE
-  FINISHED
-  POSTPONED
+enum Status {
+  upComing
+  onGoing
+  finished
 }
-
-enum NotificationType {
-  BROADCAST          // platform-wide
-  TOURNAMENT_UPDATE  // tournament-related
-  DIRECT_MESSAGE     // admin → admin
-  SYSTEM             // AI / system generated
-}
-
 
 enum GoalType {
   normal
@@ -48,43 +34,34 @@ enum EventType {
   Yellow
   Red
 }
-
-enum MediaOwnerType {
-  TOURNAMENT
-  MATCH
-  TEAM
-  PLAYER
+enum MediaType {
+  teamLogo
+  playerImage
+  tournamentImage
+  matchImage
 }
-
-enum ImageUsage {
-  COVER      // tournament cover, match poster
-  GALLERY    // multiple images
-  AVATAR     // player profile
-  LOGO       // team logo
-  BANNER     // header images
-}
-
-
 // --------------------
 // MODELS
 // --------------------
 
 // ADMIN
 model Admin {
-  id        String @id @default(uuid())
-  email     String @unique
-  username  String @unique
-  fullName  String
-  password  String
-  refreshToken String?
-  role      AdminRole @default(tournamentManager)
-  isActive  Boolean   @default(true)
+  id                  String           @id @default(uuid())
+  email               String           @unique
+  fullName            String
+  password            String
+  username            String           @unique
+  accessToken         String?
+  refreshToken        String?
+  role                AdminRole @default(tournamentManager)
+  isActive            Boolean @default(true)
 
-  tournaments           Tournament[]  @relation("ManagedTournaments")
-  sentNotifications     Notification[] @relation("Sender")
-  receivedNotifications Notification[] @relation("Receiver")
+
+  // Relations
+  tournaments         Tournament[]     @relation("ManagedTournaments")
+  sentNotifications   Notifications[]  @relation("Sender")
+  receivedNotifications Notifications[] @relation("Receiver")
 }
-
 
 
 // PLAYER
@@ -97,20 +74,18 @@ model Player {
 
   // Relations
   playerMatchStats PlayerMatchStats[]
-  team      Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  team      Team       @relation(fields: [teamId], references: [id])
   events    MatchEvent[]
   goalScore GoalScorer[]
-
   @@unique([teamId, number])
-  @@index([teamId])
 }
 
 
 // TEAM
 model Team {
   id         String     @id @default(uuid())
-  teamName   String     @unique
-
+  teamName   String
+  logo       String
   power Int @default(0)
 
 //relation
@@ -122,7 +97,6 @@ model Team {
   tournaments  TournamentTeam[]
 }
 
-
 // TOURNAMENT
 model Tournament {
   id             String     @id @default(uuid())
@@ -133,15 +107,13 @@ model Tournament {
   description    String
   venue          String?
   sponsor        String?
-  status         TournamentStatus
+  status         Status
 //relation
-  notification    Notification[]
-  manager        Admin       @relation("ManagedTournaments", fields: [managerId], references: [id], onDelete: Cascade)
+  manager        Admin       @relation("ManagedTournaments", fields: [managerId], references: [id])
   teams          TournamentTeam[]
   matches        Match[]
   standings      TournamentStanding[]   
-  
-  @@index([status])
+  mediaGallery   MediaGallery[]
 }
 
 // TOURNAMENT TEAM (JUNCTION TABLE)
@@ -150,12 +122,10 @@ model TournamentTeam {
   tournamentId String
   teamId       String
 
-  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  team         Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  tournament   Tournament @relation(fields: [tournamentId], references: [id])
+  team         Team       @relation(fields: [teamId], references: [id])
 
-  @@unique([tournamentId, teamId])
-  @@index([tournamentId])
-  @@index([teamId]) // prevent duplicate registrations
+  @@unique([tournamentId, teamId]) // prevent duplicate registrations
 }
 
 model PlayerMatchStats {
@@ -169,12 +139,10 @@ model PlayerMatchStats {
   red       Int @default(0)
   minutes   Int @default(0)
 
-  player    Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  match     Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player    Player @relation(fields: [playerId], references: [id])
+  match     Match  @relation(fields: [matchId], references: [id])
 
   @@unique([playerId, matchId])
-  @@index([matchId])
-  @@index([playerId])
 }
 
 
@@ -188,7 +156,7 @@ model Match {
   awayTeamId    String
   venue         String
   referee       String
-  status        MatchStatus
+  status        Status
   homeScore     Int @default(0)
   awayScore     Int @default(0)
   matchWeek Int?
@@ -196,18 +164,15 @@ model Match {
 
   // Relations
   playerMatchStats PlayerMatchStats[]
-  tournament    Tournament   @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  homeTeam      Team         @relation("HomeTeam", fields: [homeTeamId], references: [id], onDelete: Cascade)
-  awayTeam      Team         @relation("AwayTeam", fields: [awayTeamId], references: [id], onDelete: Cascade)
+  tournament    Tournament   @relation(fields: [tournamentId], references: [id])
+  homeTeam      Team         @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam      Team         @relation("AwayTeam", fields: [awayTeamId], references: [id])
   events        MatchEvent[]
   goalScore     GoalScorer[]
 
   matchStats    MatchStats?
   @@unique([homeTeamId, awayTeamId, scheduledDate])
 
-  @@index([tournamentId])
-  @@index([status])
-  @@index([scheduledDate])
 }
 
 // MATCH EVENTS
@@ -220,9 +185,9 @@ model MatchEvent {
   eventType   EventType
 
 //relation
-  match       Match      @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  player      Player     @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  team        Team       @relation(fields: [eventTeamId],references: [id], onDelete: Cascade)
+  match       Match      @relation(fields: [matchId], references: [id])
+  player      Player     @relation(fields: [playerId], references: [id])
+  team        Team       @relation(fields: [eventTeamId],references: [id])
 
 }
 
@@ -235,10 +200,8 @@ model GoalScorer {
   goaltype  GoalType    @default(normal)
   minute    Int
 
-  match     Match       @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  player    Player      @relation(fields: [playerId], references: [id], onDelete: Cascade)
-
-  @@index([playerId,matchId])
+  match     Match       @relation(fields: [matchId], references: [id])
+  player    Player      @relation(fields: [playerId], references: [id])
 }
 
 
@@ -257,68 +220,39 @@ model MatchStats {
   cornersHome    Int?
   cornersAway    Int?
 
-  match          Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
-
-  @@index([matchId])
+  match          Match    @relation(fields: [matchId], references: [id])
 }
 
 
 // MEDIA
 model MediaGallery {
-  id            String         @id @default(uuid())
-
+  id            String     @id @default(uuid())
   url           String
-  publicId      String?        // Cloudinary / S3 key
+  type          MediaType
+  tournamentId  String?
+  teamId        String?
+  playerId      String?
+  matchId       String?
 
-  ownerType     MediaOwnerType
-  ownerId       String
-
-  usage         ImageUsage
-
-  width         Int?
-  height        Int?
-  size          Int?           // bytes
-  format        String?        // png, jpg, webp
-
-  isPrimary     Boolean        @default(false)
-
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-
-   @@index([ownerType, ownerId])
-  @@index([usage])
+  tournament    Tournament? @relation(fields: [tournamentId], references: [id])
+  // team          Team?       @relation(fields: [teamId], references: [id])
+  // player        Player?     @relation(fields: [playerId], references: [id])
+  // match         Match?      @relation(fields: [matchId], references: [id])
 }
 
 
-
 // NOTIFICATIONS
-model Notification {
-  id               String            @id @default(uuid())
+model Notifications {
+  id              String  @id @default(uuid())
+  receiverAdminId String?
+  senderAdminId   String
+  message         String
+  isSent          Boolean @default(false)
+  isAnnouncement   Boolean @default(false)
 
-  type             NotificationType
+  sender          Admin   @relation("Sender", fields: [senderAdminId], references: [id])
+  receiver        Admin?   @relation("Receiver", fields: [receiverAdminId], references: [id])
 
-  message          String
-
-  // Scope
-  tournamentId     String?           // null = platform-wide
-  receiverAdminId  String?           // null = broadcast
-  senderAdminId    String?           // null = system / AI
-
-  // State
-  isRead           Boolean           @default(false)
-  readAt           DateTime?
-
-  // Metadata
-  createdAt        DateTime          @default(now())
-
-  // Relations
-  tournament       Tournament?       @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  sender           Admin?             @relation("Sender", fields: [senderAdminId], references: [id], onDelete: Cascade)
-  receiver         Admin?             @relation("Receiver", fields: [receiverAdminId], references: [id], onDelete: Cascade)
-
-  @@index([type])
-  @@index([tournamentId])
-  @@index([receiverAdminId])
 }
 
 model TournamentStanding {
@@ -338,10 +272,8 @@ model TournamentStanding {
   rank           Int?
   form           String? 
   // Relations
-  tournament     Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  team           Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  tournament     Tournament @relation(fields: [tournamentId], references: [id])
+  team           Team       @relation(fields: [teamId], references: [id])
 
   @@unique([tournamentId, teamId]) // A team can't have 2 records in same tournament
-
-  @@index([tournamentId])
 }

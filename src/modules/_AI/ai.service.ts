@@ -3,14 +3,12 @@ import { prisma } from "../../config/db";
 // import { promises as fs } from "fs";
 import { aiApiCall, collectTeamStats, downloadImages } from "./utility/common";
 import {
-  buildAnnouncementPrompt,
   buildGroupShufflePrompt,
   buildKnockoutPrompt,
   buildLeagueShufflePrompt,
   buildPosterPrompt,
   buildPredictionPrompt,
   buildTeamPowerPrompt,
-  buildTransferAnnouncementPrompt,
 } from "./utility/promptBuilder";
 import {
   Group,
@@ -21,8 +19,6 @@ import {
   Match,
   MatchWeek,
   PosterInput,
-  TournamentAnnouncementInput,
-  TransferAnnouncementInput,
 } from "./utility/type";
 
 export class FixtureAI {
@@ -347,25 +343,5 @@ export class FixtureAI {
     } catch (error) {
       console.log("error:", error);
     }
-  }
-  private static async generateWithPrompt<T>(
-    promptBuilder: (input: T) => string,
-    input: T
-  ) {
-    try {
-      const prompt = promptBuilder(input);
-      return await aiApiCall(prompt);
-    } catch (error) {
-      console.error("AI generation error:", error);
-      throw error;
-    }
-  }
-
-  static generateTransferAnnouncement(input: TransferAnnouncementInput) {
-    return this.generateWithPrompt(buildTransferAnnouncementPrompt, input);
-  }
-
-  static generateAnnouncement(input: TournamentAnnouncementInput) {
-    return this.generateWithPrompt(buildAnnouncementPrompt, input);
   }
 }
