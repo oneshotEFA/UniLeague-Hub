@@ -1,17 +1,14 @@
 import { Prisma } from "../../../generated/prisma";
 import { prisma } from "../../config/db";
-import { CloudinaryService } from "../../common/constants/cloudinary";
 import { GalleryService } from "../gallery/gallery.service"
 export class TeamService {
   constructor(
     private PrismaService= prisma,
-    private cloudinaryService: CloudinaryService,
     private galleryService: GalleryService
   ) {}
 
   // upload image(logo) to the cloudinary cloud create team
   async createTeam(teamName: string, logo: Express.Multer.File){
-    
     try{
       if ( !teamName || !logo ){
         return {  
@@ -54,12 +51,12 @@ export class TeamService {
       return {
         ok: false,
         error: error.message
-      };
+      }
     }
   }
 
   // update team
-  async updateTeam(id: string, data: Prisma.TeamUpdateInput, logo: Express.Multer.File){
+  async updateTeam(id: string, data: Prisma.TeamUpdateInput, logo?: Express.Multer.File){
 
     try {
       if (!id) {
@@ -69,19 +66,45 @@ export class TeamService {
         };
       };
       
-      const update = await this.PrismaService.team.update({
+      const updateTeam = await this.PrismaService.team.update({
         where: {id},
         data
       });
 
+      if (logo) {
+
+        const existingLogo = await this.PrismaService.mediaGallery.findFirst({
+          where: { ownerId: id,},
+          select: { id: true, publicId: true}
+        });
+
+        await this.galleryService.savePicture(
+          logo.buffer,
+          id,
+          "TEAM",
+          "LOGO",
+          true
+        )
+
+        if (existingLogo?.publicId) {
+          await this.galleryService.deleteImage(existingLogo.publicId);
+
+          await this.PrismaService.mediaGallery.delete({
+            where: {id: existingLogo.id}
+          })
+        }
+      }
+
+      
       return {
         ok: true,
-        data: update
+        data: updateTeam
       }
-    }catch(error: any){
+
+    }catch(error){
       return {
         ok: false,
-        error: error.message
+        error: error instanceof Error? error.message: "unknown error",
       }
     }
 
@@ -100,9 +123,20 @@ export class TeamService {
           error: "team does not exist"
         }
       }
+      const removeLogo = await this.PrismaService.mediaGallery.findFirst({
+        where: {ownerId: id},
+        select: {publicId: true}
+      });
+      
+      if (removeLogo?.publicId){
+        await this.galleryService.deleteImage(removeLogo.publicId)
+      };
+
       const removedTeam = await this.PrismaService.team.delete({
         where: {id}
       });
+
+      
       return {
         ok: true,
         data: removedTeam
@@ -126,16 +160,29 @@ export class TeamService {
           error: "team name required"
         };
       };
-      const search = await this.PrismaService.team.findMany({
+      const team = await this.PrismaService.team.findFirst({
         where: {teamName:{
           contains: fineName,
            mode: "insensitive"
           }}
       });
+
+      if (team) {
+
+        const logo = await this.galleryService.getImagesByOwner("TEAM",team.id);
+        return{
+          ok: true,
+          data: {
+            ...team,
+            logo
+          }
+        }
+      }
       return {
-        ok: true,
-        data: search
+        ok: false,
+        error: "no team found "
       };
+
     }catch (error: any){
       return {
         ok: false,
@@ -145,7 +192,6 @@ export class TeamService {
   }
 
   // get team be Id
-
   async getTeamById(id: string){
 
     try{
@@ -167,9 +213,15 @@ export class TeamService {
       const getTeam = await this.PrismaService.team.findUnique({
         where: { id }
       });
+
+      const logo = await this.galleryService.getImagesByOwner("TEAM",id);
+
       return {
         ok: true,
-        data: getTeam
+        data:{
+          ...getTeam,
+          logo
+        }
       }
     }catch (error: any){
       return {
