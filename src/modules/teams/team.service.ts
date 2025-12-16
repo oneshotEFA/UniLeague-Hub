@@ -1,169 +1,328 @@
 import { Prisma } from "../../../generated/prisma";
 import { prisma } from "../../config/db";
-import { CloudinaryService } from "../../common/constants/cloudinary";
-
+import { GalleryService } from "../gallery/gallery.service"
 export class TeamService {
   constructor(
-    private PrismaService = prisma,
-    private cloudinaryService: CloudinaryService
+    private PrismaService= prisma,
+    private galleryService: GalleryService
   ) {}
 
   // upload image(logo) to the cloudinary cloud create team
-  async createTeam(teamName: string, logo: Express.Multer.File) {
-    try {
-      if (!teamName || !logo) {
-        return {
+  async createTeam(teamName: string, logo: Express.Multer.File){
+    try{
+      if ( !teamName || !logo ){
+        return {  
           ok: false,
-          error: "Team name and logo is required",
+          error: "Team name and logo is required"
         };
       }
       const check = await this.PrismaService.team.findMany({
-        where: { teamName },
+        where: {teamName}
       });
-      if (check.length > 0) {
+      if (check.length > 0){
         return {
           ok: false,
-          error: "there is a team with this name!!!",
-        };
+          error: "there is a team with this name!!!"
+        }
       }
-
-      const logoUrl = await this.cloudinaryService.upload(
-        logo.buffer,
-        "teamLogo"
-      );
-
+      
       const team = await this.PrismaService.team.create({
         data: {
-          teamName,
-          // logo: logoUrl
-        },
+          teamName
+        }
       });
+
+      const logoSaved = await this.galleryService.savePicture(
+        logo.buffer,
+        team.id,
+        "TEAM",
+        "LOGO",
+        true
+      );
+
       return {
         ok: true,
-        data: team,
-      };
-    } catch (error: any) {
+        data: {
+          team, 
+          logo: logoSaved.data?.url
+        }
+      }
+    }catch (error: any){
       return {
         ok: false,
-        error: error.message,
-      };
+        error: error.message
+      }
     }
   }
 
   // update team
-  async updateTeam(id: string, data: Prisma.TeamUpdateInput) {
+  async updateTeam(id: string, data: Prisma.TeamUpdateInput, logo?: Express.Multer.File){
+
     try {
       if (!id) {
         return {
           ok: false,
-          error: "invalid parameter",
+          error: "invalid parameter"
         };
+      };
+      
+      const updateTeam = await this.PrismaService.team.update({
+        where: {id},
+        data
+      });
+
+      if (logo) {
+
+        const existingLogo = await this.PrismaService.mediaGallery.findFirst({
+          where: { ownerId: id,},
+          select: { id: true, publicId: true}
+        });
+
+        await this.galleryService.savePicture(
+          logo.buffer,
+          id,
+          "TEAM",
+          "LOGO",
+          true
+        )
+
+        if (existingLogo?.publicId) {
+          await this.galleryService.deleteImage(existingLogo.publicId);
+
+          await this.PrismaService.mediaGallery.delete({
+            where: {id: existingLogo.id}
+          })
+        }
       }
 
-      const update = await this.PrismaService.team.update({
-        where: { id },
-        data,
-      });
+      
       return {
         ok: true,
-        data: update,
-      };
-    } catch (error: any) {
+        data: updateTeam
+      }
+
+    }catch(error){
       return {
         ok: false,
-        error: error.message,
-      };
+        error: error instanceof Error? error.message: "unknown error",
+      }
     }
+
   }
+
 
   // remove team
-  async removeTeam(id: string) {
-    try {
-      const team = await this.PrismaService.team.findUnique({
-        where: { id },
+  async removeTeam(id: string){
+    try{
+      const  team = await this.PrismaService.team.findUnique({
+        where: { id }
       });
-      if (!team) {
+      if (!team){
         return {
           ok: false,
-          error: "team does not exist",
-        };
+          error: "team does not exist"
+        }
       }
-      const removedTeam = await this.PrismaService.team.delete({
-        where: { id },
+      const removeLogo = await this.PrismaService.mediaGallery.findFirst({
+        where: {ownerId: id},
+        select: {publicId: true}
       });
+      
+      if (removeLogo?.publicId){
+        await this.galleryService.deleteImage(removeLogo.publicId)
+      };
+
+      const removedTeam = await this.PrismaService.team.delete({
+        where: {id}
+      });
+
+      
       return {
         ok: true,
-        data: removedTeam,
-      };
-    } catch (error: any) {
+        data: removedTeam
+      }
+    }catch (error: any){
       return {
         ok: false,
-        error: error.message,
-      };
+        error: error.message
+      }
     }
   }
 
-  // search team
-  async searchTeamByName(teamName: string) {
+
+  // search team 
+  async searchTeamByName(teamName: string){
     const fineName = teamName.trim();
-    try {
-      if (!fineName) {
+    try{
+      if (!fineName){
         return {
           ok: false,
-          error: "team name required",
+          error: "team name required"
         };
-      }
-      const search = await this.PrismaService.team.findMany({
-        where: {
-          teamName: {
-            contains: fineName,
-            mode: "insensitive",
-          },
-        },
-      });
-      return {
-        ok: true,
-        data: search,
       };
-    } catch (error: any) {
+      const team = await this.PrismaService.team.findFirst({
+        where: {teamName:{
+          contains: fineName,
+           mode: "insensitive"
+          }}
+      });
+
+      if (team) {
+
+        const logo = await this.galleryService.getImagesByOwner("TEAM",team.id);
+        return{
+          ok: true,
+          data: {
+            ...team,
+            logo
+          }
+        }
+      }
       return {
         ok: false,
-        error: error.message,
+        error: "no team found "
       };
+
+    }catch (error: any){
+      return {
+        ok: false,
+        error: error.message
+      }
     }
   }
 
   // get team be Id
+  async getTeamById(id: string){
 
-  async getTeamById(id: string) {
-    try {
-      if (!id) {
-        return {
+    try{
+      if (!id){
+        return{
           ok: false,
-          error: "id requierd",
-        };
+          error: "id requierd"
+        }
       }
       const check = await this.PrismaService.team.findUnique({
-        where: { id },
+        where: { id }
       });
-      if (!check) {
-        return {
+      if (!check){
+        return{
           ok: false,
-          error: "no team found",
-        };
+          error: "no team found"
+        }
       }
       const getTeam = await this.PrismaService.team.findUnique({
-        where: { id },
+        where: { id }
       });
+
+      const logo = await this.galleryService.getImagesByOwner("TEAM",id);
+
       return {
         ok: true,
-        data: getTeam,
-      };
-    } catch (error: any) {
+        data:{
+          ...getTeam,
+          logo
+        }
+      }
+    }catch (error: any){
       return {
         ok: false,
-        error: error.message,
-      };
+        error: error.message
+      }
     }
   }
+
+  // team stastics
+  async teamStatus(id: string){
+    try{
+    if (!id) {
+      return {
+        ok: false,
+        error: "teamid is required"
+      }
+    }
+    const check = await this.PrismaService.team.findUnique({
+      where: {id: id}
+    });
+    if (!check){
+      return {
+        ok: false,
+        error: "team does not exist"
+      }
+    }
+    const matches = await this.PrismaService.match.findMany({
+      where: {
+        status: "FINISHED",
+        OR: [
+          { homeTeamId: id},
+          { awayTeamId: id}
+        ]
+      }
+    });
+
+    let wins = 0;
+    let draws = 0;
+    let losses = 0;
+    let goalsFor = 0;
+    let goalsAgainst = 0;
+
+    for (const match of matches) {
+      const home = match.homeTeamId === id;
+
+      const scored = home ? match.homeScore : match.awayScore;
+      const conceded = home ? match.awayScore: match.homeScore;
+
+      goalsFor += scored;
+      goalsAgainst += conceded;
+
+      if (scored > conceded){
+        wins ++;
+      }
+      else if (scored === conceded){
+        draws ++;
+      }
+      else {
+        losses ++;
+      }
+
+    }
+
+    const cards = await this.PrismaService.matchEvent.groupBy({
+      by: ["eventType"],
+      where: {
+        eventTeamId: id,
+        eventType: {in: ["Yellow", "Red"]}
+      },
+      _count: true
+    })
+
+    const yellowCards = cards.find(check => check.eventType ==="Yellow")?._count ?? 0;
+    const readCards = cards.find(check => check.eventType === "Red")?._count ?? 0; 
+
+    return {
+      ok: true,
+      data: {
+        id,
+        teamName: check.teamName,
+        matchesPlayed: matches.length,
+        wins,
+        draws,
+        losses,
+        goalsFor,
+        goalsAgainst,
+        goalDifference: goalsFor - goalsAgainst,
+        yellowCards,
+        readCards
+      }
+    };
+
+  }catch(error: any){
+    return {
+      ok: false,
+      error: error.message
+    };
+  }
+
+  }
+
+  
 }
