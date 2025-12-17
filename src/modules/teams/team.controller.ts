@@ -5,9 +5,9 @@ import { ApiResponseBuilder } from "../../common/utils/ApiResponse";
 import { prisma } from "../../config/db";
 import { GalleryService } from "../gallery/gallery.service";
 
-const cloud = new GalleryService();
+const gallery = new GalleryService();
 
-const teamService = new TeamService(prisma, cloud);
+const teamService = new TeamService(prisma, gallery);
 
 export class teamControl {
   // create a team

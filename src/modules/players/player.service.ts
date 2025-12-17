@@ -1,12 +1,17 @@
 import { prisma } from "../../config/db";
+import { handleRedCard, handleYellowCard } from "./utility";
 export class PlayerService {
   constructor(private prismaService = prisma) {}
 
   // creating a player
-  async createPlayer(name: string, position:string, number: number, teamId: string){
-    try{
-
-      if (!name || !position  || number <=0 || !teamId){
+  async createPlayer(
+    name: string,
+    position: string,
+    number: number,
+    teamId: string
+  ) {
+    try {
+      if (!name || !position || number <= 0 || !teamId) {
         return {
           ok: false,
           error: "Invalid input parameters!!",
@@ -14,83 +19,80 @@ export class PlayerService {
       }
 
       const teamExists = await this.prismaService.team.findUnique({
-        where: {id: teamId }
+        where: { id: teamId },
       });
-      if (!teamExists){
+      if (!teamExists) {
         return {
           ok: false,
-          error: "This team does not exist!!"
+          error: "This team does not exist!!",
         };
       }
 
-
       const exists = await this.prismaService.player.findFirst({
-        where: {teamId, number},
+        where: { teamId, number },
       });
-      if(exists){
+      if (exists) {
         return {
           ok: false,
-          error: "Player number already taken in this team"
+          error: "Player number already taken in this team",
         };
       }
       const player = await this.prismaService.player.create({
-        data:{
+        data: {
           name,
           position,
           number,
-          teamId
+          teamId,
         },
       });
       return {
         ok: true,
-        data: player
+        data: player,
       };
-    }catch(error: any){
+    } catch (error: any) {
       return {
-        ok:false,
-        error: error.message
+        ok: false,
+        error: error.message,
       };
     }
   }
 
+  // getting all players
 
-      // getting all players 
-
-  async getPlayers( teamId:string ){
-    try{
-      const players = await  this.prismaService.player.findMany({
-        where: {teamId},
-        include:{team:{select: {teamName: true}}}
+  async getPlayers(teamId: string) {
+    try {
+      const players = await this.prismaService.player.findMany({
+        where: { teamId },
+        include: { team: { select: { teamName: true } } },
       });
       return {
         ok: true,
-        data: players
+        data: players,
       };
-    }catch (error: any){
+    } catch (error: any) {
       return {
         ok: false,
-        error: error.message
-      }
+        error: error.message,
+      };
     }
   }
 
   // get player by id
 
-  async getPlayerById(id: string){
-    try{
+  async getPlayerById(id: string) {
+    try {
       const player = await this.prismaService.player.findUnique({
         where: { id },
-        include: {team:{select:{  teamName:true}}},
-
+        include: { team: { select: { teamName: true } } },
       });
-      if(!player){
+      if (!player) {
         return {
           ok: false,
-          error: "player not found !!!"
+          error: "player not found !!!",
         };
       }
       const status = await this.prismaService.playerMatchStats.aggregate({
-        where: {playerId: id},
+        where: { playerId: id },
         _sum: {
           goals: true,
           assists: true,
@@ -99,7 +101,7 @@ export class PlayerService {
           minutes: true,
         },
       });
-      
+
       return {
         ok: true,
         data: {
@@ -107,142 +109,198 @@ export class PlayerService {
           totalStatus: {
             goals: status._sum.goals || 0,
             assists: status._sum.assists || 0,
-            yellow : status._sum.yellow || 0,
+            yellow: status._sum.yellow || 0,
             red: status._sum.red || 0,
             minutes: status._sum.minutes || 0,
           },
         },
       };
-      
-    }catch(error: any){
+    } catch (error: any) {
       return {
         ok: false,
-        error: error.message
-      }
+        error: error.message,
+      };
     }
   }
 
   // update player
-  async updatePlayer(id: string, data: any){
-    try{
-      if (data.teamId || data.number){
-      const player = await this.prismaService.player.findUnique({
-        where: { id },
-      });
+  async updatePlayer(id: string, data: any) {
+    try {
+      if (data.teamId || data.number) {
+        const player = await this.prismaService.player.findUnique({
+          where: { id },
+        });
 
-      if (!player){
-        return {
-          ok: false,
-          error: "Player not found!!!"
-        };
-        
-      }
-      const exists = await this.prismaService.player.findFirst({
-        where: {
-          teamId: data.teamId ?? player.teamId,
-          number: data.number ?? player.number,
-          NOT: { id }
-        },
-      });
+        if (!player) {
+          return {
+            ok: false,
+            error: "Player not found!!!",
+          };
+        }
+        const exists = await this.prismaService.player.findFirst({
+          where: {
+            teamId: data.teamId ?? player.teamId,
+            number: data.number ?? player.number,
+            NOT: { id },
+          },
+        });
 
-      if (exists){
-        return{
-          ok: false,
-          error: "Another player already has the number change number"
+        if (exists) {
+          return {
+            ok: false,
+            error: "Another player already has the number change number",
+          };
         }
       }
-    }
 
       const updated = await this.prismaService.player.update({
-        where: {id},
-        data
+        where: { id },
+        data,
       });
       return {
         ok: true,
-        data: updated
+        data: updated,
       };
-      
-      }catch (error: any){
-        return {
-          ok: false, 
-          error: error.message
-        };
-      }
+    } catch (error: any) {
+      return {
+        ok: false,
+        error: error.message,
+      };
     }
+  }
 
-    // delete players
+  // delete players
 
-    async deletePlayer(id: string){
-      try{
-        const exists = await this.prismaService.player.findUnique({
-          where: {id}
-        });
+  async deletePlayer(id: string) {
+    try {
+      const exists = await this.prismaService.player.findUnique({
+        where: { id },
+      });
 
-        if (!exists){
-          return {
-            ok: false,
-            error: "Player not found !!!"
-          };
-        }
-
-        await this.prismaService.player.delete({ where: {id }});
-        return {
-          ok: true,
-          data: "Player deleted successfully"
-        };
-
-      }catch (error: any){
+      if (!exists) {
         return {
           ok: false,
-          error: error.message
+          error: "Player not found !!!",
         };
       }
+
+      await this.prismaService.player.delete({ where: { id } });
+      return {
+        ok: true,
+        data: "Player deleted successfully",
+      };
+    } catch (error: any) {
+      return {
+        ok: false,
+        error: error.message,
+      };
     }
+  }
 
-    // get players by there teams
+  // get players by there teams
 
-    async getPlayerByTeam(teamId: string){
-      try{
-        const players = await this.prismaService.player.findMany({
-          where: { teamId},
-        });
-        return {
-          ok: true,
-          data: players
-        }
-      }catch(error: any){
+  async getPlayerByTeam(teamId: string) {
+    try {
+      const players = await this.prismaService.player.findMany({
+        where: { teamId },
+      });
+      return {
+        ok: true,
+        data: players,
+      };
+    } catch (error: any) {
+      return {
+        ok: false,
+        error: error.message,
+      };
+    }
+  }
+
+  // search player by name
+  async searchPlayerByName(name: string) {
+    try {
+      const fineName = name.trim();
+      const playerName = await this.prismaService.player.findMany({
+        where: { name: { contains: fineName, mode: "insensitive" } },
+      });
+
+      if (playerName.length === 0) {
         return {
           ok: false,
-          error: error.message
-        }
+          error: "player not found",
+        };
       }
+      return {
+        ok: true,
+        data: playerName,
+      };
+    } catch (error: any) {
+      return {
+        ok: false,
+        error: error.message,
+      };
     }
+  }
+  async playerStatHandler({ eventId }: { eventId: string }) {
+    console.log("bye");
+    await prisma.$transaction(async (tx) => {
+      const event = await tx.matchEvent.findUnique({
+        where: { id: eventId },
+      });
 
-    // search player by name
-    async searchPlayerByName(name: string){
-      try{
-        const fineName = name.trim()
-        const playerName = await this.prismaService.player.findMany({
-        where: {name:{contains: fineName, mode: 'insensitive'}}
+      if (!event) {
+        throw new Error("MatchEvent not found");
+      }
+
+      if (event.processingStatus === "PROCESSED") {
+        // Idempotency guard
+        return;
+      }
+
+      switch (event.eventType) {
+        case "Goal":
+          await tx.playerMatchStats.upsert({
+            where: {
+              playerId_matchId: {
+                playerId: event.playerId,
+                matchId: event.matchId,
+              },
+            },
+            update: {
+              goals: { increment: 1 },
+            },
+            create: {
+              playerId: event.playerId,
+              matchId: event.matchId,
+              goals: 1,
+              minutes: event.minute,
+            },
           });
 
-          if (playerName.length === 0) {
-            return {
-              ok: false,
-              error: "player not found"
-            }
-          }
-          return {
-            ok: true,
-            data: playerName
-          }
-        }catch(error: any){
-          return{
-             ok: false,
-             error: error.message
-          }
-        }
-      
-    }
+          await tx.goalScorer.create({
+            data: {
+              playerId: event.playerId,
+              matchId: event.matchId,
+              minute: event.minute,
+            },
+          });
+          break;
 
+        case "Yellow":
+          await handleYellowCard(tx, event);
+          break;
+
+        case "Red":
+          await handleRedCard(tx, event);
+          break;
+      }
+
+      await tx.matchEvent.update({
+        where: { id: event.id },
+        data: {
+          processingStatus: "PROCESSED",
+        },
+      });
+    });
+  }
 }
