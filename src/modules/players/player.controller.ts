@@ -1,19 +1,23 @@
 import { Request, Response } from "express";
 import { ApiResponseBuilder } from "../../common/utils/ApiResponse";
 import { PlayerService } from "./player.service";
-
-const playerService = new PlayerService();
+import { GalleryService } from "../gallery/gallery.service";
+import { prisma } from "../../config/db";
+const gallery = new GalleryService()
+const playerService = new PlayerService(prisma,gallery);
 
 export class PlayerControl{
     // create a player
     static async createPlayer(req: Request ,res: Response){
         const {name, position, number,teamId} = req.body;
+        const playerPhoto = req.file
 
         const values = await playerService.createPlayer(
             name,
             position,
-            number,
-            teamId
+            Number(number),
+            teamId,
+            playerPhoto
         );
 
         if(!values.ok) {
@@ -23,7 +27,7 @@ export class PlayerControl{
         }
 
         return res
-        .status(200)
+        .status(201)
         .json(
             new ApiResponseBuilder()
             .created("player created")
@@ -36,8 +40,8 @@ export class PlayerControl{
 
     // Get all players
     static async getPlayers(req: Request, res: Response){
-        const {teamId} = req.params
-        const values = await playerService.getPlayers(teamId);
+        const {teamId} = req.query;
+        const values = await playerService.getPlayers(teamId as string);
 
         if (!values.ok) {
             return res
@@ -45,7 +49,7 @@ export class PlayerControl{
             .json(new ApiResponseBuilder().badRequest(values.error).build(res));
         }
         return res
-        .status(201)
+        .status(200)
         .json(
             new ApiResponseBuilder()
             .ok("players fetched")
@@ -71,7 +75,7 @@ export class PlayerControl{
                 );
             }
             return res
-            .status(201)
+            .status(200)
             .json(
                 new ApiResponseBuilder()
                 .ok("player found")
@@ -82,11 +86,12 @@ export class PlayerControl{
     // get player by it's name
 
     static async getPlayerByName(req: Request, res: Response){
-        const { name } = req.body;
+        const {name} = req.params;
+
         const playerName = await playerService.searchPlayerByName(name);
         if (!playerName.ok){
             return res
-            .status(400)
+            .status(404)
             .json(
                 new ApiResponseBuilder()
                 .notFound(playerName.error)
@@ -94,7 +99,7 @@ export class PlayerControl{
             )
         }
         return res
-        .status(201)
+        .status(200)
         .json(
             new ApiResponseBuilder()
             .created("player found")
