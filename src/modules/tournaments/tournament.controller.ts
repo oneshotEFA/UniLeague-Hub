@@ -2,13 +2,15 @@ import { Request, Response } from "express";
 import { ApiResponseBuilder } from "../../common/utils/ApiResponse";
 import { TournamentService } from "./tournament.service";
 import { prisma } from "../../config/db";
-
-const tournamentService = new TournamentService(prisma);
+import { GalleryService } from "../gallery/gallery.service";
+const gallery = new GalleryService();
+const tournamentService = new TournamentService(prisma, gallery);
 
 export class TournamentController {
   // GET ALL TOURNAMENTS
   static async getTournaments(req: Request, res: Response) {
-    const result = await tournamentService.getTournaments();
+    const year = req.query.year as string;
+    const result = await tournamentService.getTournaments(year);
 
     if (!result.ok) {
       return new ApiResponseBuilder().notFound(result.error).build(res);

@@ -128,8 +128,8 @@ model Tournament {
   id             String     @id @default(uuid())
   managerId      String
   tournamentName String
-  startingDate   String
-  endingDate     String
+  startingDate   DateTime
+  endingDate     DateTime
   description    String
   venue          String?
   sponsor        String?
@@ -183,7 +183,7 @@ model PlayerMatchStats {
 model Match {
   id            String       @id @default(uuid())
   tournamentId  String
-  scheduledDate String
+  scheduledDate DateTime
   homeTeamId    String
   awayTeamId    String
   venue         String
@@ -218,6 +218,7 @@ model MatchEvent {
   eventTeamId String
   minute      Int
   eventType   EventType
+  processingStatus  String
 
 //relation
   match       Match      @relation(fields: [matchId], references: [id], onDelete: Cascade)
