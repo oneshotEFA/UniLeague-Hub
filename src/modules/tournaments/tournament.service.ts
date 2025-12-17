@@ -1,24 +1,55 @@
 import { error } from "console";
 import { prisma } from "../../config/db";
-import { fixtureMatchesType, tournament, UpdateTournament } from "./utility";
+import {
+  fixtureMatchesType,
+  parseSeason,
+  tournament,
+  UpdateTournament,
+} from "./utility";
 import { eventBus } from "../../events/event-bus";
 import { TOURNAMENT_ANNOUNCEMENT } from "../../events/events";
+import { GalleryService } from "../gallery/gallery.service";
 
 export class TournamentService {
-  constructor(private prismaService = prisma) {}
+  constructor(
+    private prismaService = prisma,
+    private galleryService: GalleryService
+  ) {}
 
-  async getTournaments() {
+  async getTournaments(year: string) {
     try {
-      const res = await this.prismaService.tournament.findMany();
+      const { start, end } = parseSeason(year);
+      const res = await this.prismaService.tournament.findMany({
+        where: {
+          startingDate: {
+            gte: start,
+            lte: end,
+          },
+        },
+      });
       if (!res || res.length === 0) {
         return {
           ok: false,
-          error: "No tournaments found",
+          error: "No tournaments found in this calendar year",
         };
       }
+      const data = await Promise.all(
+        res.map(async (tournament) => {
+          const logo = await this.galleryService.getImagesByOwner(
+            "TOURNAMENT",
+            tournament.id,
+            "LOGO"
+          );
+          return {
+            ...res,
+            logoUrl: logo[0].url,
+          };
+        })
+      );
+
       return {
         ok: true,
-        data: res,
+        data,
       };
     } catch (error) {
       return {
@@ -38,9 +69,13 @@ export class TournamentService {
           error: "smtg went wrong",
         };
       }
+      const data = await Promise.all(
+        await this.galleryService.getImagesByOwner("TOURNAMENT", res.id, "LOGO")
+      );
+
       return {
         ok: true,
-        data: res,
+        data: { ...res, logoUrl: data[0]?.url },
       };
     } catch (error) {
       return {
@@ -63,15 +98,26 @@ export class TournamentService {
           manager: { select: { fullName: true } },
         },
       });
+      const logo = await this.galleryService.savePicture(
+        data.logo.buffer,
+        res.id,
+        "TOURNAMENT",
+        "LOGO",
+        true
+      );
+      let message = "Tournament created successfully";
       eventBus.emit(TOURNAMENT_ANNOUNCEMENT, {
         name: res.tournamentName,
         startDate: res.startingDate,
         organizer: res.sponsor,
         extraInfo: res.description,
       });
+      if (!logo.ok) message: "Tournament created but logo upload failed";
+
       return {
         ok: true,
         data: res,
+        message,
       };
     } catch (error) {
       return {
@@ -84,6 +130,12 @@ export class TournamentService {
   async deleteTournament(id: string) {
     try {
       const res = await this.prismaService.tournament.delete({ where: { id } });
+      const logo = await this.prismaService.mediaGallery.findFirst({
+        where: { ownerId: id, ownerType: "TOURNAMENT", usage: "LOGO" },
+        select: { publicId: true },
+      });
+      if (!logo?.publicId) return { ok: true, data: res };
+      await this.galleryService.deleteImage(logo?.publicId);
       return {
         ok: true,
         data: res, // Optionally return the deleted tournament
@@ -98,7 +150,7 @@ export class TournamentService {
 
   async updateTournament(data: UpdateTournament) {
     try {
-      const { id, ...update } = data;
+      const { id, logo, ...update } = data;
 
       // Validate tournament exists first
       const existing = await this.prismaService.tournament.findUnique({
@@ -109,6 +161,28 @@ export class TournamentService {
           ok: false,
           error: "Tournament not found",
         };
+      }
+      if (logo) {
+        const existingLogo = await this.prismaService.mediaGallery.findFirst({
+          where: { ownerId: id },
+          select: { id: true, publicId: true },
+        });
+
+        await this.galleryService.savePicture(
+          logo.buffer,
+          id,
+          "TOURNAMENT",
+          "LOGO",
+          true
+        );
+
+        if (existingLogo?.publicId) {
+          await this.galleryService.deleteImage(existingLogo.publicId);
+
+          await this.prismaService.mediaGallery.delete({
+            where: { id: existingLogo.id },
+          });
+        }
       }
 
       const filteredUpdate = this.cleanData(update);
@@ -245,9 +319,22 @@ export class TournamentService {
           error: "No team found",
         };
       }
+      const data = await Promise.all(
+        teams.map(async (team) => {
+          const logo = await this.galleryService.getImagesByOwner(
+            "TEAM",
+            team.team.id,
+            "LOGO"
+          );
+          return {
+            ...team.team,
+            logoUrl: logo[0]?.url,
+          };
+        })
+      );
       return {
         ok: true,
-        data: teams,
+        data,
       };
     } catch (error) {
       return {
