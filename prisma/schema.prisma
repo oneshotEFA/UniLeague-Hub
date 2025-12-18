@@ -129,7 +129,7 @@ model Tournament {
   managerId      String
   tournamentName String
   startingDate   DateTime
-  endingDate     DateTime
+  endingDate     DateTime 
   description    String
   venue          String?
   sponsor        String?

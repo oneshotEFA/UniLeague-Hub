@@ -3,84 +3,59 @@ import { ApiResponseBuilder } from "../../common/utils/ApiResponse";
 import { PlayerService } from "./player.service";
 import { GalleryService } from "../gallery/gallery.service";
 import { prisma } from "../../config/db";
-
 const gallery = new GalleryService();
 const playerService = new PlayerService(prisma, gallery);
 
-export class PlayerControl{
-    // create a player
-    static async createPlayer(req: Request ,res: Response){
-        const {name, position, number,teamId} = req.body;
-        const playerPhoto = req.file
+export class PlayerControl {
+  // create a player
+  static async createPlayer(req: Request, res: Response) {
+    const { name, position, number, teamId } = req.body;
+    const playerPhoto = req.file;
 
-        const values = await playerService.createPlayer(
-            name,
-            position,
-            Number(number),
-            teamId,
-            playerPhoto
-        );
+    const values = await playerService.createPlayer(
+      name,
+      position,
+      Number(number),
+      teamId,
+      playerPhoto
+    );
 
-        if(!values.ok) {
-            return res
-            .status(400)
-            .json(new ApiResponseBuilder().badRequest(values.error).build(res))
-        }
-
-        return res
-        .status(201)
-        .json(
-            new ApiResponseBuilder()
-            .created("player created")
-            .withData(values.data)
-            .build(res)
-        )
-    
-    }
-    
-
-    // Get all players
-    static async getPlayers(req: Request, res: Response){
-        const {teamId} = req.query;
-        const values = await playerService.getPlayers(teamId as string);
-
-        if (!values.ok) {
-            return res
-            .status(400)
-            .json(new ApiResponseBuilder().badRequest(values.error).build(res));
-        }
-        return res
-        .status(200)
-        .json(
-            new ApiResponseBuilder()
-            .ok("players fetched")
-            .withData(values.data)
-            .build(res)
-        )
+    if (!values.ok) {
+      return res
+        .status(400)
+        .json(new ApiResponseBuilder().badRequest(values.error).build(res));
     }
 
-    // Get player by Id
-        
-        static async getPlayerById(req: Request, res: Response){
-            const { id } = req.params;
+    return res
+      .status(201)
+      .json(
+        new ApiResponseBuilder()
+          .created("player created")
+          .withData(values.data)
+          .build(res)
+      );
+  }
 
-            const value = await playerService.getPlayerById( id );
+  // Get all players
+  static async getPlayers(req: Request, res: Response) {
+    const { teamId } = req.query;
+    const values = await playerService.getPlayers(teamId as string);
 
-            if (!value.ok){
-                return res
-                .status(404)
-                .json(
-                    new ApiResponseBuilder()
-                    .notFound(value.error)
-                    .build(res)
-                );
-            }
+        if (!values.ok){
+            return res
+            .status(404)
+            .json(
+                new ApiResponseBuilder()
+                .notFound(values.error)
+                .build(res)
+            );
+        }
             return res
             .status(200)
             .json(
                 new ApiResponseBuilder()
                 .ok("player found")
-                .withData(value.data)
+                .withData(values.data)
                 .build(res)
             )
         }

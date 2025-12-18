@@ -9,13 +9,18 @@ export class PlayerService {
     ) {}
 
   // creating a player
-  async createPlayer(name: string, position:string, number: number, teamId: string, playerPhoto? : Express.Multer.File){
-    try{
-
-      if (!name || !position  || number <=0 || !teamId){
+  async createPlayer(
+    name: string,
+    position: string,
+    number: number,
+    teamId: string,
+    playerPhoto?: Express.Multer.File
+  ) {
+    try {
+      if (!name || !position || number <= 0 || !teamId) {
         return {
           ok: false,
-          error: "Invalid input parameters!!"
+          error: "Invalid input parameters!!",
         };
       }
 
@@ -33,7 +38,7 @@ export class PlayerService {
         where: { teamId, number },
       });
 
-      if(exists){
+      if (exists) {
         return {
           ok: false,
           error: "Player number already taken in this team",
@@ -49,22 +54,21 @@ export class PlayerService {
       });
       let avatar = null;
 
-      if (playerPhoto){
+      if (playerPhoto) {
         avatar = await this.galleryService.savePicture(
           playerPhoto.buffer,
           player.id,
           "PLAYER",
           "AVATAR",
           true
-        );   
-        
+        );
       }
       return {
         ok: true,
         data: {
           ...player,
-          avatar
-        }
+          avatar,
+        },
       };
     } catch (error: any) {
       return {
@@ -84,7 +88,7 @@ export class PlayerService {
       });
 
       const result = [];
-      for (const player of players){
+      for (const player of players) {
         const avatar = await this.galleryService.getImagesByOwner(
           "PLAYER",
           player.id,
@@ -93,13 +97,13 @@ export class PlayerService {
 
         result.push({
           ...player,
-          avatar: avatar.length ? avatar[0].url : null
-        })
+          avatar: avatar.length ? avatar[0].url : null,
+        });
       }
-      
+
       return {
         ok: true,
-        data: result
+        data: result,
       };
     } catch (error: any) {
       return {
@@ -111,20 +115,18 @@ export class PlayerService {
 
   // get player by id
 
-  async getPlayerById(id: string){
-    try{
-
+  async getPlayerById(id: string) {
+    try {
       if (!id) {
         return {
-            ok: false,
-            error: "Player ID must be provided.",
+          ok: false,
+          error: "Player ID must be provided.",
         };
-    }
-    
+      }
+
       const player = await this.prismaService.player.findUnique({
         where: { id: id },
-        include: {team:{select:{  teamName:true}}},
-
+        include: { team: { select: { teamName: true } } },
       });
       if (!player) {
         return {
@@ -132,7 +134,7 @@ export class PlayerService {
           error: "player not found !!!",
         };
       }
-       
+
       const status = await this.prismaService.playerMatchStats.aggregate({
         where: { playerId: id },
         _sum: {
@@ -143,14 +145,13 @@ export class PlayerService {
           minutes: true,
         },
       });
-      
+
       const avatar = await this.galleryService.getImagesByOwner(
         "PLAYER",
         id,
         "AVATAR"
-
       );
-      
+
       return {
         ok: true,
         data: {
@@ -165,13 +166,12 @@ export class PlayerService {
           },
         },
       };
-      
-    }catch (error: any) {
-        console.error("Error fetching player by ID:", error); 
-        return {
-            ok: false,
-            error: error.message || "An unexpected error occurred.",
-        };
+    } catch (error: any) {
+      console.error("Error fetching player by ID:", error);
+      return {
+        ok: false,
+        error: error.message || "An unexpected error occurred.",
+      };
     }
   }
 
@@ -286,6 +286,22 @@ export class PlayerService {
           error: "Player not found !!!",
         };
       }
+      const existingAvatar = await this.prismaService.mediaGallery.findFirst({
+        where: {
+          ownerId: id,
+          ownerType: "PLAYER",
+          usage: "AVATAR",
+          isPrimary: true,
+        },
+        select: { publicId: true },
+      });
+      if (existingAvatar?.publicId) {
+        try {
+          await this.galleryService.deleteImage(existingAvatar.publicId);
+        } catch (deleteError) {
+          console.log("error deleting avatar", deleteError);
+        }
+      }
 
       await this.prismaService.player.delete({ where: { id } });
       return {
@@ -389,10 +405,10 @@ export class PlayerService {
 
         const players = await this.prismaService.player.findMany({
             where: {
-                name: {
-                    contains: fineName,
-                    mode: 'insensitive',
-                },
+              playerId_matchId: {
+                playerId: event.playerId,
+                matchId: event.matchId,
+              },
             },
             include: {
                 team: {
