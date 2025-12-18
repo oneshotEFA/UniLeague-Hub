@@ -1,11 +1,12 @@
 import { prisma } from "../../config/db";
 import { GalleryService } from "../gallery/gallery.service";
 import { handleRedCard, handleYellowCard } from "./utility";
+
 export class PlayerService {
   constructor(
     private prismaService = prisma,
-    private galleryService: GalleryService
-  ) {}
+    private galleryService: GalleryService,
+    ) {}
 
   // creating a player
   async createPlayer(
@@ -175,97 +176,101 @@ export class PlayerService {
   }
 
   // update player
-  async updatePlayer(
-    id: string,
-    number?: number,
-    name?: string,
-    position?: string,
-    avatar?: Express.Multer.File
-  ) {
-    try {
-      if (!id) {
-        return {
-          ok: false,
-          error: "player id required",
-        };
-      }
+        async updatePlayer(
+            id: string,
+            number?: number,
+            name?: string,
+            position?: string,
+            avatar?: Express.Multer.File
+          ) {
 
-      const player = await this.prismaService.player.findUnique({
-        where: { id },
-      });
+            try {
+              if (!id) {
+                return {
+                  ok: false,
+                  error: "player id required"
+                };
+              }
 
-      if (!player) {
-        return {
-          ok: false,
-          error: "Player not found!!!",
-        };
-      }
+              const player = await this.prismaService.player.findUnique({
+                where: { id },
+              });
 
-      if (number !== undefined) {
-        const exists = await this.prismaService.player.findFirst({
-          where: {
-            number,
-            teamId: player.teamId,
-            NOT: { id },
-          },
-        });
+              if (!player) {
+                return {
+                  ok: false,
+                  error: "Player not found!!!"
+                };
+              }
 
-        if (exists) {
-          return {
-            ok: false,
-            error: "Another player already has the number change number",
-          };
-        }
-      }
+              if (number !== undefined) {
+                const exists = await this.prismaService.player.findFirst({
+                  where: {
+                    number,
+                    teamId: player.teamId,
+                    NOT: { id }
+                  }
+                });
 
-      const updateData: any = {};
-      if (number !== undefined) updateData.number = number;
-      if (name !== undefined) updateData.name = name;
-      if (position !== undefined) updateData.position = position;
+                if (exists) {
+                  return {
+                    ok: false,
+                    error: "Another player already has the number change number"
+                  };
+                }
+              }
 
-      const updatedplayer = await this.prismaService.player.update({
-        where: { id },
-        data: updateData,
-      });
+              const updateData: any = {};
 
-      if (avatar) {
-        const existingAvatar = await this.prismaService.mediaGallery.findFirst({
-          where: {
-            ownerId: id,
-            ownerType: "PLAYER",
-            usage: "AVATAR",
-            isPrimary: true,
-          },
-          select: {
-            id: true,
-            publicId: true,
-          },
-        });
+              if (number !== undefined) updateData.number = number;
+              if (name !== undefined) updateData.name = name;
+              if (position !== undefined) updateData.position = position;
 
-        await this.galleryService.savePicture(
-          avatar.buffer,
-          id,
-          "PLAYER",
-          "AVATAR",
-          true
-        );
+              const updatedPlayer = await this.prismaService.player.update({
+                where: { id },
+                data: updateData
+              });
 
-        if (existingAvatar?.publicId) {
-          await this.galleryService.deleteImage(existingAvatar.publicId);
-        }
-      }
+              if (avatar) {
+                const existingAvatar = await this.prismaService.mediaGallery.findFirst({
+                  where: {
+                    ownerId: id,
+                    ownerType: "PLAYER",
+                    usage: "AVATAR",
+                    isPrimary: true
+                  },
+                  select: {
+                    id: true,
+                    publicId: true
+                  }
+                });
 
-      return {
-        ok: true,
-        data: updatedplayer,
-      };
-    } catch (error: any) {
-      return {
-        ok: false,
-        error: error.message,
-      };
-    }
-  }
+                await this.galleryService.savePicture(
+                  avatar.buffer,
+                  id,
+                  "PLAYER",
+                  "AVATAR",
+                  true
+                );
+
+                if (existingAvatar?.publicId) {
+                  await this.galleryService.deleteImage(existingAvatar.publicId);
+                }
+              }
+
+              return {
+                ok: true,
+                data: updatedPlayer
+              };
+
+            } catch (error: any) {
+              return {
+                ok: false,
+                error: error.message
+              };
+            }
+          }
+
 
   // delete players
 
@@ -312,153 +317,213 @@ export class PlayerService {
   }
 
   // get players by there teams
-
-  async getPlayerByTeam(teamId: string) {
+      async getPlayerByTeam(teamId: string) {
     try {
-      const players = await this.prismaService.player.findMany({
-        where: { teamId },
-      });
-      return {
-        ok: true,
-        data: players,
-      };
-    } catch (error: any) {
-      return {
-        ok: false,
-        error: error.message,
-      };
-    }
-  }
+        
+        const teamExists = await this.prismaService.team.findUnique({
+            where: { id: teamId },
+        });
 
-  // search player by name
-  async searchPlayerByName(name: string) {
-    try {
-      console.log("Received name:", name);
-      const fineName = name.trim();
-      if (!fineName) {
+        if (!teamExists) {
+            return {
+                ok: false,
+                error: "Team not found!",
+            };
+        }
+
+        const players = await this.prismaService.player.findMany({
+            where: { teamId },
+        });
+
+        if (players.length === 0) {
+            return {
+                ok: false,
+                error: "No players found for this team!",
+            };
+        }
+
+        const result = [];
+        for (const player of players) {
+            const exists = await this.prismaService.player.findUnique({
+                where: { id: player.id },
+            });
+
+            if (!exists) {
+                return {
+                    ok: false,
+                    error: "Player not found!",
+                };
+            }
+
+            const existingAvatar = await this.prismaService.mediaGallery.findFirst({
+                where: {
+                    ownerId: player.id,
+                    ownerType: "PLAYER",
+                    usage: "AVATAR",
+                    isPrimary: true,
+                },
+                select: { publicId: true }
+            });
+
+            if (existingAvatar?.publicId) {
+                try {
+                    await this.galleryService.deleteImage(existingAvatar.publicId);
+                } catch (deleteError) {
+                    console.log("Error deleting avatar", deleteError);
+                }
+            }
+
+            result.push(player);
+        }
+
         return {
-          ok: false,
-          error: "Player name cannot be empty.",
+            ok: true,
+            data: result,
         };
-      }
-      const players = await this.prismaService.player.findMany({
-        where: {
-          name: {
-            contains: fineName,
-            mode: "insensitive",
-          },
-        },
-        include: {
-          team: {
-            select: {
-              teamName: true,
+    } catch (error: any) {
+        console.error("Error fetching players by team:", error);
+        return {
+            ok: false,
+            error: error.message || "An unexpected error occurred.",
+        };
+    }
+}
+
+ 
+    // search player by name
+
+  async searchPlayerName(name: string): Promise<{ ok: boolean; data?: any; error?: string }> {
+    try {
+        console.log("Received name:", name);
+        const fineName = name.trim();
+        if (!fineName) {
+            return {
+                ok: false,
+                error: "Player name cannot be empty.",
+            };
+        }
+
+        const players = await this.prismaService.player.findMany({
+            where: {
+              playerId_matchId: {
+                playerId: event.playerId,
+                matchId: event.matchId,
+              },
             },
-          },
-        },
-      });
-      if (players.length === 0) {
+            include: {
+                team: {
+                    select: {
+                        teamName: true,
+                    },
+                },
+            },
+        });
+
+        if (players.length === 0) {
+            return {
+                ok: false,
+                error: "Player not found.",
+            };
+        }
+
+        const result = await Promise.all(players.map(async (player) => {
+            const avatar = await this.galleryService.getImagesByOwner(
+                "PLAYER",
+                player.id,
+                "AVATAR"
+            );
+            return {
+                ...player,
+                avatar: avatar.length ? avatar[0].url : null,
+            };
+        }));
+
         return {
-          ok: false,
-          error: "Player not found.",
+            ok: true,
+            data: result,
         };
-      }
-      const result = await Promise.all(
-        players.map(async (player) => {
-          const avatar = await this.galleryService.getImagesByOwner(
-            "PLAYER",
-            player.id,
-            "AVATAR"
-          );
+    } catch (error: any) {
+        console.error("Error searching for player:", error);
+        return {
+            ok: false,
+            error: error.message || "An unexpected error occurred.",
+        };
+    }
+}
+ // player transfer
+
+    async playerTransfer(playerId: string, newTeamId: string, newNumber: number){
+
+      try{
+        if (!playerId || !newTeamId || newNumber < 0){
+          return{
+            ok: false,
+            error: "invalid input check again!"
+          }
+        }
+
+        const checkPlayer = await this.prismaService.player.findUnique({
+          where: {id: playerId}
+        });
+        if (!checkPlayer){
           return {
-            ...player,
-            avatar: avatar.length ? avatar[0].url : null,
-          };
-        })
-      );
+            
+            ok: false,
+            error: "player does not exist"
+          }
+        }
 
-      return {
-        ok: true,
-        data: result,
-      };
-    } catch (error: any) {
-      console.error("Error searching for player:", error);
-      return {
-        ok: false,
-        error: error.message || "An unexpected error occurred.",
-      };
+        const checkTeam = await this.prismaService.team.findUnique({
+          where:{id: newTeamId}
+        });
+        
+        if(!checkTeam) {
+          return {
+            ok: false,
+            error: "the new team does not exist"
+          }
+        }
+        const checkNumber = await this.prismaService.player.findMany({
+          where: {
+            number: newNumber,
+            teamId: newTeamId
+          }
+        });
+        if (checkNumber.length > 0){
+          return {
+            ok: false,
+            error: "the number is taken by other player in the team"
+          }
+        }
+
+        if (checkPlayer.teamId === newTeamId){
+          return {
+            ok: false,
+            error: "transfer to same team is not allowed"
+          }
+        }
+
+        const transferPlayer = await this.prismaService.player.update({
+          where: { id: playerId},
+          data: {
+            teamId: newTeamId,
+            number: newNumber
+          }
+        });
+
+        return {
+          ok: true,
+          data: transferPlayer
+        }
+      }catch (error: any){
+        return {
+          ok: false,
+          error: error.message
+        }
+      }
+
     }
-  }
 
-  // player transfer
-
-  async playerTransfer(playerId: string, newTeamId: string, newNumber: number) {
-    try {
-      if (!playerId || !newTeamId || newNumber < 0) {
-        return {
-          ok: false,
-          error: "invalid input check again!",
-        };
-      }
-
-      const checkPlayer = await this.prismaService.player.findUnique({
-        where: { id: playerId },
-      });
-      if (!checkPlayer) {
-        return {
-          ok: false,
-          error: "player does not exist",
-        };
-      }
-
-      const checkTeam = await this.prismaService.team.findUnique({
-        where: { id: newTeamId },
-      });
-
-      if (!checkTeam) {
-        return {
-          ok: false,
-          error: "the new team does not exist",
-        };
-      }
-      const checkNumber = await this.prismaService.player.findMany({
-        where: {
-          number: newNumber,
-          teamId: newTeamId,
-        },
-      });
-      if (checkNumber.length > 0) {
-        return {
-          ok: false,
-          error: "the number is taken by other player in the team",
-        };
-      }
-
-      if (checkPlayer.teamId === newTeamId) {
-        return {
-          ok: false,
-          error: "transfer to same team is not allowed",
-        };
-      }
-
-      const transferPlayer = await this.prismaService.player.update({
-        where: { id: playerId },
-        data: {
-          teamId: newTeamId,
-          number: newNumber,
-        },
-      });
-
-      return {
-        ok: true,
-        data: transferPlayer,
-      };
-    } catch (error: any) {
-      return {
-        ok: false,
-        error: error.message,
-      };
-    }
-  }
   async playerStatHandler({ eventId }: { eventId: string }) {
     console.log("bye");
     await prisma.$transaction(async (tx) => {

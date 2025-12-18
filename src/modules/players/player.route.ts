@@ -8,6 +8,7 @@ playerRouter.post("/create",upload.single("playerPhoto") ,PlayerControl.createPl
 playerRouter.get("/:id/team", PlayerControl.getPlayers)
 playerRouter.get("/search/:name", PlayerControl.getPlayerByName)
 playerRouter.get("/:id/player", PlayerControl.getPlayerById)
+playerRouter.post("/transfer", PlayerControl.transferPlayer)
 
 
 export default playerRouter

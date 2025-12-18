@@ -41,60 +41,78 @@ export class PlayerControl {
     const { teamId } = req.query;
     const values = await playerService.getPlayers(teamId as string);
 
-    if (!values.ok) {
-      return res
-        .status(400)
-        .json(new ApiResponseBuilder().badRequest(values.error).build(res));
+        if (!values.ok){
+            return res
+            .status(404)
+            .json(
+                new ApiResponseBuilder()
+                .notFound(values.error)
+                .build(res)
+            );
+        }
+            return res
+            .status(200)
+            .json(
+                new ApiResponseBuilder()
+                .ok("player found")
+                .withData(values.data)
+                .build(res)
+            )
+        }
+    // get player by it's name
+
+    static async getPlayerByName(req: Request, res: Response){
+        const {name} = req.params;
+
+        const playerName = await playerService.searchPlayerName(name);
+        if (!playerName.ok){
+            return res
+            .status(404)
+            .json(
+                new ApiResponseBuilder()
+                .notFound(playerName.error)
+                .build(res)
+            )
+        }
+        return res
+        .status(200)
+        .json(
+            new ApiResponseBuilder()
+            .created("player found")
+            .withData(playerName.data)
+            .build(res)
+        )
     }
-    return res
-      .status(200)
-      .json(
-        new ApiResponseBuilder()
-          .ok("players fetched")
-          .withData(values.data)
-          .build(res)
-      );
-  }
 
-  // Get player by Id
+    // transfer player 
+        static async transferPlayer(req: Request, res: Response) {
+            const { playerId, newTeamId, newNumber } = req.body;
 
-  static async getPlayerById(req: Request, res: Response) {
-    const { id } = req.params;
+            if (!playerId || !newTeamId || typeof newNumber !== "number") {
+                return res
+                    .status(400)
+                    .json(new ApiResponseBuilder()
+                        .badRequest("Provide playerId, newTeamId, and newNumber")
+                        .build(res));
+            }
 
-    const value = await playerService.getPlayerById(id);
+            const result = await playerService.playerTransfer(playerId, newTeamId, newNumber);
 
-    if (!value.ok) {
-      return res
-        .status(404)
-        .json(new ApiResponseBuilder().notFound(value.error).build(res));
-    }
-    return res
-      .status(200)
-      .json(
-        new ApiResponseBuilder()
-          .ok("player found")
-          .withData(value.data)
-          .build(res)
-      );
-  }
-  // get player by it's name
+            if (!result.ok) {
+                return res
+                    .status(400)
+                    .json(new ApiResponseBuilder()
+                        .badRequest(result.error)
+                        .build(res));
+            }
 
-  static async getPlayerByName(req: Request, res: Response) {
-    const { name } = req.params;
+            return res
+                .status(200)
+                .json(new ApiResponseBuilder()
+                    .ok("Player transferred successfully")
+                    .withData(result.data)
+                    .build(res));
+        }
 
-    const playerName = await playerService.searchPlayerByName(name);
-    if (!playerName.ok) {
-      return res
-        .status(404)
-        .json(new ApiResponseBuilder().notFound(playerName.error).build(res));
-    }
-    return res
-      .status(200)
-      .json(
-        new ApiResponseBuilder()
-          .created("player found")
-          .withData(playerName.data)
-          .build(res)
-      );
-  }
+        
 }
