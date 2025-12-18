@@ -3,8 +3,9 @@ import { ApiResponseBuilder } from "../../common/utils/ApiResponse";
 import { PlayerService } from "./player.service";
 import { GalleryService } from "../gallery/gallery.service";
 import { prisma } from "../../config/db";
-const gallery = new GalleryService()
-const playerService = new PlayerService(prisma,gallery);
+
+const gallery = new GalleryService();
+const playerService = new PlayerService(prisma, gallery);
 
 export class PlayerControl{
     // create a player
@@ -88,7 +89,7 @@ export class PlayerControl{
     static async getPlayerByName(req: Request, res: Response){
         const {name} = req.params;
 
-        const playerName = await playerService.searchPlayerByName(name);
+        const playerName = await playerService.searchPlayerName(name);
         if (!playerName.ok){
             return res
             .status(404)
@@ -107,5 +108,36 @@ export class PlayerControl{
             .build(res)
         )
     }
+
+    // transfer player 
+        static async transferPlayer(req: Request, res: Response) {
+            const { playerId, newTeamId, newNumber } = req.body;
+
+            if (!playerId || !newTeamId || typeof newNumber !== "number") {
+                return res
+                    .status(400)
+                    .json(new ApiResponseBuilder()
+                        .badRequest("Provide playerId, newTeamId, and newNumber")
+                        .build(res));
+            }
+
+            const result = await playerService.playerTransfer(playerId, newTeamId, newNumber);
+
+            if (!result.ok) {
+                return res
+                    .status(400)
+                    .json(new ApiResponseBuilder()
+                        .badRequest(result.error)
+                        .build(res));
+            }
+
+            return res
+                .status(200)
+                .json(new ApiResponseBuilder()
+                    .ok("Player transferred successfully")
+                    .withData(result.data)
+                    .build(res));
+        }
+
         
 }
