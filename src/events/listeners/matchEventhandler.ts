@@ -4,10 +4,12 @@ import {
   markEventAsFailed,
   recoverMatch,
 } from "../../middlewares/errorHandler";
+import { GalleryService } from "../../modules/gallery/gallery.service";
 import { PlayerService } from "../../modules/players/player.service";
 import { eventBus } from "../event-bus";
 import { EVENT_HANDLER } from "../events";
-const playerService = new PlayerService();
+const gallery = new GalleryService();
+const playerService = new PlayerService(prisma, gallery);
 eventBus.on(EVENT_HANDLER, async (payload: { eventId: string }) => {
   await withRetry(
     async () => {

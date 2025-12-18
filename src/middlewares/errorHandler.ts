@@ -4,7 +4,9 @@ import { HttpStatusCode } from "../common/constants/http";
 import { prisma } from "../config/db";
 
 import { PlayerService } from "../modules/players/player.service";
-const playerService = new PlayerService(prisma);
+import { GalleryService } from "../modules/gallery/gallery.service";
+const gallery = new GalleryService();
+const playerService = new PlayerService(prisma, gallery);
 export const errorHandler = (
   err: any,
   req: Request,
