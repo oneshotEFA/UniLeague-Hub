@@ -9,8 +9,7 @@ const tournamentService = new TournamentService(prisma, gallery);
 export class TournamentController {
   // GET ALL TOURNAMENTS
   static async getTournaments(req: Request, res: Response) {
-    const year = req.query.year as string;
-    const result = await tournamentService.getTournaments(year);
+    const result = await tournamentService.getTournaments();
 
     if (!result.ok) {
       return new ApiResponseBuilder().notFound(result.error).build(res);

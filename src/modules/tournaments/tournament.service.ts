@@ -1,4 +1,3 @@
-import { error } from "console";
 import { prisma } from "../../config/db";
 import {
   fixtureMatchesType,
@@ -16,17 +15,9 @@ export class TournamentService {
     private galleryService: GalleryService
   ) {}
 
-  async getTournaments(year: string) {
+  async getTournaments() {
     try {
-      const { start, end } = parseSeason(year);
-      const res = await this.prismaService.tournament.findMany({
-        where: {
-          startingDate: {
-            gte: start,
-            lte: end,
-          },
-        },
-      });
+      const res = await this.prismaService.tournament.findMany({});
       if (!res || res.length === 0) {
         return {
           ok: false,
@@ -42,7 +33,7 @@ export class TournamentService {
           );
           return {
             ...res,
-            logoUrl: logo[0].url,
+            logoUrl: logo[0]?.url,
           };
         })
       );

@@ -10,7 +10,7 @@ router.get("/:id", TournamentController.getTournament);
 router.get("/:tournamentId/teams", TournamentController.getTournamentTeams);
 
 router.get(
-  "/:tournamentId/Matches",
+  "/:tournamentId/matches",
   TournamentController.getTournamentFixtures
 );
 
