@@ -10,6 +10,8 @@
 - getLiveMatches() */
 import { prisma } from "../../config/db";
 import { match, UpdateMatchSchedule } from "./mtype";
+import { eventBus } from "../../events/event-bus";
+import { MATCH_FINISHED } from "../../events/events";
 
 
 
@@ -117,6 +119,14 @@ export class MatchService {
       const match = await this.prismaService.match.update({
         where: { id },
         data: updateData,
+      });
+      // Emit event to update standings
+      eventBus.emit(MATCH_FINISHED, {
+        tournamentId: match.tournamentId,
+        homeTeamId: match.homeTeamId,
+        awayTeamId: match.awayTeamId,
+        homeScore: match.homeScore,
+        awayScore: match.awayScore,
       });
       return {
         ok: true,
