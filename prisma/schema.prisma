@@ -187,7 +187,7 @@ model Match {
   homeTeamId    String
   awayTeamId    String
   venue         String
-  referee       String
+  referee       String?
   status        MatchStatus
   homeScore     Int @default(0)
   awayScore     Int @default(0)
