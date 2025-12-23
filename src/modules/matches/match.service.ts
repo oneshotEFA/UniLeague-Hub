@@ -11,9 +11,7 @@
 import { prisma } from "../../config/db";
 import { match, UpdateMatchSchedule } from "./mtype";
 import { eventBus } from "../../events/event-bus";
-import { MATCH_FINISHED } from "../../events/events";
-
-
+import { MATCH_FINISHED, TEAMPOWER } from "../../events/events";
 
 export class MatchService {
   constructor(private prismaService = prisma) {}
@@ -22,21 +20,21 @@ export class MatchService {
     try {
       const date = new Date(dateStr);
       if (isNaN(date.getTime())) {
-        return typeof dateStr === 'string' ? dateStr : dateStr.toISOString();
+        return typeof dateStr === "string" ? dateStr : dateStr.toISOString();
       }
-      const hours = date.getHours().toString().padStart(2, '0');
-      const minutes = date.getMinutes().toString().padStart(2, '0');
-      const day = date.getDate().toString().padStart(2, '0');
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const hours = date.getHours().toString().padStart(2, "0");
+      const minutes = date.getMinutes().toString().padStart(2, "0");
+      const day = date.getDate().toString().padStart(2, "0");
+      const month = (date.getMonth() + 1).toString().padStart(2, "0");
       const year = date.getFullYear().toString().slice(-2);
       return `${hours}:${minutes} ${day}/${month}/${year}`;
     } catch (error) {
-      return typeof dateStr === 'string' ? dateStr : dateStr.toISOString();
+      return typeof dateStr === "string" ? dateStr : dateStr.toISOString();
     }
   }
 
   async createMatch(data: match) {
-  try {
+    try {
       const matchData = await this.prismaService.match.create({
         data: {
           ...data,
@@ -47,7 +45,12 @@ export class MatchService {
       });
       return {
         ok: true,
-        data: { ...matchData, scheduledDate: this.formatDate(matchData.scheduledDate as unknown as string) },
+        data: {
+          ...matchData,
+          scheduledDate: this.formatDate(
+            matchData.scheduledDate as unknown as string
+          ),
+        },
       };
     } catch (error) {
       return {
@@ -65,7 +68,12 @@ export class MatchService {
       });
       return {
         ok: true,
-        data: { ...match, scheduledDate: this.formatDate(match.scheduledDate as unknown as string) },
+        data: {
+          ...match,
+          scheduledDate: this.formatDate(
+            match.scheduledDate as unknown as string
+          ),
+        },
       };
     } catch (error) {
       return {
@@ -83,7 +91,12 @@ export class MatchService {
       });
       return {
         ok: true,
-        data: { ...match, scheduledDate: this.formatDate(match.scheduledDate as unknown as string) },
+        data: {
+          ...match,
+          scheduledDate: this.formatDate(
+            match.scheduledDate as unknown as string
+          ),
+        },
       };
     } catch (error) {
       return {
@@ -101,7 +114,12 @@ export class MatchService {
       });
       return {
         ok: true,
-        data: { ...match, scheduledDate: this.formatDate(match.scheduledDate as unknown as string) },
+        data: {
+          ...match,
+          scheduledDate: this.formatDate(
+            match.scheduledDate as unknown as string
+          ),
+        },
       };
     } catch (error) {
       return {
@@ -128,9 +146,18 @@ export class MatchService {
         homeScore: match.homeScore,
         awayScore: match.awayScore,
       });
+      eventBus.emit(TEAMPOWER, {
+        homeTeamId: match.homeTeamId,
+        awayTeamId: match.awayTeamId,
+      });
       return {
         ok: true,
-        data: { ...match, scheduledDate: this.formatDate(match.scheduledDate as unknown as string) },
+        data: {
+          ...match,
+          scheduledDate: this.formatDate(
+            match.scheduledDate as unknown as string
+          ),
+        },
       };
     } catch (error) {
       return {
@@ -162,7 +189,12 @@ export class MatchService {
       }
       return {
         ok: true,
-        data: { ...match, scheduledDate: this.formatDate(match.scheduledDate as unknown as string) },
+        data: {
+          ...match,
+          scheduledDate: this.formatDate(
+            match.scheduledDate as unknown as string
+          ),
+        },
       };
     } catch (error) {
       return {
@@ -184,7 +216,10 @@ export class MatchService {
       });
       return {
         ok: true,
-        data: matches.map(m => ({ ...m, scheduledDate: this.formatDate(m.scheduledDate as unknown as string) })),
+        data: matches.map((m) => ({
+          ...m,
+          scheduledDate: this.formatDate(m.scheduledDate as unknown as string),
+        })),
       };
     } catch (error) {
       return {
@@ -198,10 +233,7 @@ export class MatchService {
     try {
       const matches = await this.prismaService.match.findMany({
         where: {
-          OR: [
-            { homeTeamId: teamId },
-            { awayTeamId: teamId },
-          ],
+          OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }],
         },
         include: {
           homeTeam: true,
@@ -212,7 +244,10 @@ export class MatchService {
       });
       return {
         ok: true,
-        data: matches.map(m => ({ ...m, scheduledDate: this.formatDate(m.scheduledDate as unknown as string) })),
+        data: matches.map((m) => ({
+          ...m,
+          scheduledDate: this.formatDate(m.scheduledDate as unknown as string),
+        })),
       };
     } catch (error) {
       return {
@@ -244,7 +279,10 @@ export class MatchService {
       });
       return {
         ok: true,
-        data: matches.map(m => ({ ...m, scheduledDate: this.formatDate(m.scheduledDate as unknown as string) })),
+        data: matches.map((m) => ({
+          ...m,
+          scheduledDate: this.formatDate(m.scheduledDate as unknown as string),
+        })),
       };
     } catch (error) {
       return {
@@ -269,7 +307,10 @@ export class MatchService {
       });
       return {
         ok: true,
-        data: matches.map(m => ({ ...m, scheduledDate: this.formatDate(m.scheduledDate as unknown as string) })),
+        data: matches.map((m) => ({
+          ...m,
+          scheduledDate: this.formatDate(m.scheduledDate as unknown as string),
+        })),
       };
     } catch (error) {
       return {
@@ -291,7 +332,10 @@ export class MatchService {
       });
       return {
         ok: true,
-        data: matches.map(m => ({ ...m, scheduledDate: this.formatDate(m.scheduledDate as unknown as string) })),
+        data: matches.map((m) => ({
+          ...m,
+          scheduledDate: this.formatDate(m.scheduledDate as unknown as string),
+        })),
       };
     } catch (error) {
       return {
