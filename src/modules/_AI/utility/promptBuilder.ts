@@ -201,3 +201,46 @@ Return the response in strictly the following JSON format:
 }
 `;
 }
+export function buildErrorAnalysisPrompt(input: any) {
+  return `
+You are an advanced AI system specialized in analyzing software error logs and error messages.
+
+Your task is to analyze the provided error information and return a clear, structured error analysis.
+
+Input data:
+${input}
+
+Analysis Guidelines:
+- Identify the **type of error** that occurred.
+- Identify the **category of the error**, such as:
+  - Database (validation errors, foreign key issues, transaction failures)
+  - Network (timeouts, connectivity issues, unstable internet)
+  - API (service not responding, invalid responses)
+  - Data validation errors
+  - Any other relevant category
+- Write a **clear and concise explanation of the error** in non-technical language for a **content manager** (not a developer).
+- If and only if the error severity is **critical or high**, include:
+  - A developer-focused explanation of what caused the error
+  - The **recommended solution or mitigation steps**
+- Determine the **severity level** of the error:
+  - critical
+  - high
+  - medium
+  - low
+  - warning
+
+Instructions:
+- Do NOT include hashtags
+- Do NOT include any text outside the JSON response
+- Ensure explanations are accurate and easy to understand
+
+Return the response strictly in the following JSON format:
+{
+  "type": "string",
+  "category": "string",
+  "message": "string", 
+  "messageDeveloper": "string",
+  "severity": "string"
+}
+`;
+}
