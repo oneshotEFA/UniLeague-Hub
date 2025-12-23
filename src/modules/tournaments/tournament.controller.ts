@@ -40,6 +40,7 @@ export class TournamentController {
   // GET TEAMS IN TOURNAMENT
   static async getTournamentTeams(req: Request, res: Response) {
     const { tournamentId } = req.params;
+    console.log(tournamentId);
     const result = await tournamentService.getTournamentTeams(tournamentId);
 
     if (!result.ok) {
@@ -74,6 +75,20 @@ export class TournamentController {
 
     if (!result.ok) {
       return new ApiResponseBuilder().notFound(result.error).build(res);
+    }
+
+    return new ApiResponseBuilder()
+      .ok("Tournament standings fetched")
+      .withData(result.data)
+      .build(res);
+  }
+  static async initTournamentStanding(req: Request, res: Response) {
+    const { tournamentId } = req.params;
+
+    const result = await tournamentService.initTournamentStanding(tournamentId);
+
+    if (!result.ok) {
+      return new ApiResponseBuilder().notFound("result?.error").build(res);
     }
 
     return new ApiResponseBuilder()
