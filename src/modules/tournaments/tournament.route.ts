@@ -6,6 +6,7 @@ const router = Router();
 router.get("/", TournamentController.getTournaments);
 
 router.get("/:id", TournamentController.getTournament);
+router.get("/:tournamentId/init", TournamentController.initTournamentStanding);
 
 router.get("/:tournamentId/teams", TournamentController.getTournamentTeams);
 

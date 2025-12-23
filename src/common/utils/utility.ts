@@ -51,3 +51,10 @@ export async function withRetry(
   // 4️⃣ No recovery strategy → throw
   throw lastError;
 }
+export function isRecoverable(error: any) {
+  return (
+    error?.code === "P2003" || // FK violation
+    error?.code === "P2028" || // transaction error
+    error?.code === "P2034" // deadlock
+  );
+}
