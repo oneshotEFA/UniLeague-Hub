@@ -1,5 +1,6 @@
 import { recoverMatch } from "../../middlewares/errorHandler";
 import { RetryOptions } from "./type";
+import { AiService } from "../../modules/_AI/ai.service";
 
 export function cleanData(update: Record<string, any>) {
   return Object.fromEntries(
@@ -47,8 +48,9 @@ export async function withRetry(
       throw recoveryError;
     }
   }
+  const data = await AiService.analysisError(lastError);
 
-  // 4️⃣ No recovery strategy → throw
+  //await NotificationService.systemCal(data);
   throw lastError;
 }
 export function isRecoverable(error: any) {

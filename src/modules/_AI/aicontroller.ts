@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { ApiResponseBuilder } from "../../common/utils/ApiResponse";
-import { FixtureAI } from "./ai.service";
+import { AiService as FixtureAI } from "./ai.service";
 import {
   GroupInput,
   KnockoutInput,

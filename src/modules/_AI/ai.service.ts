@@ -25,7 +25,7 @@ import {
   TransferAnnouncementInput,
 } from "./utility/type";
 
-export class FixtureAI {
+export class AiService {
   static async generateRandomLeagueFixture(input: LeagueInput) {
     const {
       teams,
@@ -366,6 +366,9 @@ export class FixtureAI {
   }
 
   static generateAnnouncement(input: TournamentAnnouncementInput) {
+    return this.generateWithPrompt(buildAnnouncementPrompt, input);
+  }
+  static analysisError(input: any) {
     return this.generateWithPrompt(buildAnnouncementPrompt, input);
   }
 }

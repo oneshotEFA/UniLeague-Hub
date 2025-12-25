@@ -7,6 +7,7 @@ import { eventBus } from "../event-bus";
 import { MATCH_FINISHED } from "../events";
 
 const gallery = new GalleryService();
+
 const tournamentService = new TournamentService(prisma, gallery);
 const notificationService = new NotificationService(prisma, gallery);
 
