@@ -1,7 +1,7 @@
 import axios from "axios";
-import { ai } from "../../../config/ai";
+import { ai } from "../../../config/ai.config";
 import sharp from "sharp";
-import { prisma } from "../../../config/db";
+import { prisma } from "../../../config/db.config";
 
 export function safeJsonParse(text: string) {
   try {

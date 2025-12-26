@@ -1,7 +1,7 @@
 import sharp from "sharp";
 import { ImageUsage, MediaOwnerType } from "../../../generated/prisma";
 import cloudinary from "../../config/cloudinary.config";
-import { prisma } from "../../config/db";
+import { prisma } from "../../config/db.config";
 
 export class GalleryService {
   constructor(private prismaService = prisma) {}

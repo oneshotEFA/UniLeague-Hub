@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ApiResponseBuilder } from "../../common/utils/ApiResponse";
 import { TournamentService } from "./tournament.service";
-import { prisma } from "../../config/db";
+import { prisma } from "../../config/db.config";
 import { GalleryService } from "../gallery/gallery.service";
 const gallery = new GalleryService();
 const tournamentService = new TournamentService(prisma, gallery);
@@ -9,8 +9,7 @@ const tournamentService = new TournamentService(prisma, gallery);
 export class TournamentController {
   // GET ALL TOURNAMENTS
   static async getTournaments(req: Request, res: Response) {
-    const year = req.query.year as string;
-    const result = await tournamentService.getTournaments(year);
+    const result = await tournamentService.getTournaments();
 
     if (!result.ok) {
       return new ApiResponseBuilder().notFound(result.error).build(res);
@@ -41,6 +40,7 @@ export class TournamentController {
   // GET TEAMS IN TOURNAMENT
   static async getTournamentTeams(req: Request, res: Response) {
     const { tournamentId } = req.params;
+    console.log(tournamentId);
     const result = await tournamentService.getTournamentTeams(tournamentId);
 
     if (!result.ok) {
@@ -75,6 +75,20 @@ export class TournamentController {
 
     if (!result.ok) {
       return new ApiResponseBuilder().notFound(result.error).build(res);
+    }
+
+    return new ApiResponseBuilder()
+      .ok("Tournament standings fetched")
+      .withData(result.data)
+      .build(res);
+  }
+  static async initTournamentStanding(req: Request, res: Response) {
+    const { tournamentId } = req.params;
+
+    const result = await tournamentService.initTournamentStanding(tournamentId);
+
+    if (!result.ok) {
+      return new ApiResponseBuilder().notFound("result?.error").build(res);
     }
 
     return new ApiResponseBuilder()

@@ -1,6 +1,6 @@
 //import { PrismaClientKnownRequestError } from "../../../generated/prisma/runtime/client";
 import { ApiResponseBuilder } from "../../common/utils/ApiResponse";
-import { prisma } from "../../config/db";
+import { prisma } from "../../config/db.config";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 export class AuthService {

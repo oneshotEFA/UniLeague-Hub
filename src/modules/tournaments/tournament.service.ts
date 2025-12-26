@@ -1,5 +1,4 @@
-import { error } from "console";
-import { prisma } from "../../config/db";
+import { prisma } from "../../config/db.config";
 import {
   fixtureMatchesType,
   parseSeason,
@@ -16,17 +15,9 @@ export class TournamentService {
     private galleryService: GalleryService
   ) {}
 
-  async getTournaments(year: string) {
+  async getTournaments() {
     try {
-      const { start, end } = parseSeason(year);
-      const res = await this.prismaService.tournament.findMany({
-        where: {
-          startingDate: {
-            gte: start,
-            lte: end,
-          },
-        },
-      });
+      const res = await this.prismaService.tournament.findMany({});
       if (!res || res.length === 0) {
         return {
           ok: false,
@@ -42,7 +33,7 @@ export class TournamentService {
           );
           return {
             ...res,
-            logoUrl: logo[0].url,
+            logoUrl: logo[0]?.url,
           };
         })
       );
@@ -112,7 +103,7 @@ export class TournamentService {
         organizer: res.sponsor,
         extraInfo: res.description,
       });
-      if (!logo.ok) message: "Tournament created but logo upload failed";
+      if (!logo.ok) message = "Tournament created but logo upload failed";
 
       return {
         ok: true,
@@ -424,6 +415,7 @@ export class TournamentService {
     try {
       const standing = await this.prismaService.tournamentStanding.findMany({
         where: { tournamentId },
+        orderBy: { points: "desc" },
       });
       if (!standing) return { ok: false, error: "not found" };
       return {
@@ -487,9 +479,103 @@ export class TournamentService {
       data: updateData,
     });
   }
+
   private cleanData(update: Record<string, any>) {
     return Object.fromEntries(
       Object.entries(update).filter(([_, v]) => v !== undefined)
     );
+  }
+  async initTournamentStanding(tournamentId: string) {
+    try {
+      const teams = await this.prismaService.tournamentTeam.findMany({
+        where: { tournamentId: tournamentId },
+        select: { teamId: true },
+      });
+      const res = await Promise.all(
+        teams.map(async (team) => {
+          try {
+            return await this.initStanding(team.teamId, tournamentId);
+          } catch (err) {
+            return { ok: false, error: (err as Error).message };
+          }
+        })
+      );
+      const success = res.filter((r) => r.ok);
+      const failed = res.filter((r) => !r.ok);
+      return { ok: true, data: { success, failed } };
+    } catch (error) {
+      return {
+        ok: false,
+        error: error,
+      };
+    }
+  }
+  private async initStanding(teamId: string, tournamentId: string) {
+    try {
+      const res = await this.prismaService.tournamentStanding.upsert({
+        where: { tournamentId_teamId: { tournamentId, teamId } },
+        update: {},
+        create: { tournamentId, teamId },
+      });
+
+      return { ok: true, data: res.id };
+    } catch (error) {
+      return {
+        ok: false,
+        error: error,
+      };
+    }
+  }
+  async resetTournamentStandings(tournamentId: string) {
+    try {
+      return await this.prismaService.$transaction(async (tx) => {
+        // 1. Ensure tournament exists
+        const tournament = await tx.tournament.findUnique({
+          where: { id: tournamentId },
+          select: { id: true },
+        });
+
+        if (!tournament) {
+          return { ok: false, error: "Tournament not found" };
+        }
+
+        // 2. Get registered teams (IMPORTANT)
+        const teams = await tx.tournamentTeam.findMany({
+          where: { tournamentId },
+          select: { teamId: true },
+        });
+
+        if (teams.length === 0) {
+          return { ok: false, error: "No teams registered in tournament" };
+        }
+
+        // 3. Delete existing standings
+        await tx.tournamentStanding.deleteMany({
+          where: { tournamentId },
+        });
+
+        // 4. Recreate standings (defaults = 0)
+        await tx.tournamentStanding.createMany({
+          data: teams.map((t) => ({
+            tournamentId,
+            teamId: t.teamId,
+          })),
+          skipDuplicates: true,
+        });
+
+        return {
+          ok: true,
+          data: {
+            tournamentId,
+            teamsCount: teams.length,
+          },
+        };
+      });
+    } catch (error) {
+      return {
+        ok: false,
+        error,
+      };
+    }
   }
 }

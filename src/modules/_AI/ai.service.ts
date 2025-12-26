@@ -1,5 +1,5 @@
-import { ai } from "../../config/ai";
-import { prisma } from "../../config/db";
+import { ai } from "../../config/ai.config";
+import { prisma } from "../../config/db.config";
 // import { promises as fs } from "fs";
 import { aiApiCall, collectTeamStats, downloadImages } from "./utility/common";
 import {
@@ -25,7 +25,7 @@ import {
   TransferAnnouncementInput,
 } from "./utility/type";
 
-export class FixtureAI {
+export class AiService {
   static async generateRandomLeagueFixture(input: LeagueInput) {
     const {
       teams,
@@ -366,6 +366,9 @@ export class FixtureAI {
   }
 
   static generateAnnouncement(input: TournamentAnnouncementInput) {
+    return this.generateWithPrompt(buildAnnouncementPrompt, input);
+  }
+  static analysisError(input: any) {
     return this.generateWithPrompt(buildAnnouncementPrompt, input);
   }
 }

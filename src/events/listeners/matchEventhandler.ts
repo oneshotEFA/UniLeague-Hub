@@ -1,5 +1,5 @@
 import { withRetry } from "../../common/utils/utility";
-import { prisma } from "../../config/db";
+import { prisma } from "../../config/db.config";
 import {
   markEventAsFailed,
   recoverMatch,

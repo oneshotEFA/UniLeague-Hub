@@ -1,6 +1,7 @@
-import { prisma } from "../../config/db";
+import { prisma } from "../../config/db.config";
 import { GalleryService } from "../gallery/gallery.service";
 import { handleRedCard, handleYellowCard } from "./utility";
+
 export class PlayerService {
   constructor(
     private prismaService = prisma,

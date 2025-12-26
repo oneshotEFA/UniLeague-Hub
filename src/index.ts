@@ -1,11 +1,17 @@
 import express, { Express, Request, Response } from "express";
 import apiRouter from "./router";
+import cors from "cors";
 //import any listener u add in the event so it get register before it emits
 import "./events/listeners";
 const app: Express = express();
-const port = 3000;
+const port = 4000;
 app.use(express.json());
 
+app.use(
+  cors({
+    origin: "*",
+  })
+);
 app.get("/", (req: Request, res: Response) => {
   res.send("running trial");
 });

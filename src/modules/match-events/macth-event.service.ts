@@ -1,5 +1,5 @@
 import { error } from "console";
-import { prisma } from "../../config/db";
+import { prisma } from "../../config/db.config";
 import {
   MatchEvent,
   playerExist,
@@ -18,32 +18,54 @@ export class MatchEventService {
     try {
       const validate = await validateMatch(data.matchId);
       if (!validate.ok) {
-        return {
-          ok: false,
-          error: validate.error,
-        };
+        return { ok: false, error: validate.error };
       }
 
-      const matchEvent = await this.prismaService.matchEvent.create({
-        data: {
-          matchId: data.matchId,
-          playerId: data.playerId,
-          eventTeamId: data.teamId,
-          minute: data.min,
-          eventType: data.eventType,
-          processingStatus: "PENDING",
+      const match = await this.prismaService.match.findUnique({
+        where: { id: data.matchId },
+        select: {
+          homeTeamId: true,
+          awayTeamId: true,
+          homeScore: true,
+          awayScore: true,
         },
       });
-      eventBus.emit(EVENT_HANDLER, { eventId: matchEvent.id });
-      return {
-        ok: true,
-        data: matchEvent,
-      };
+
+      if (!match) {
+        return { ok: false, error: "Match not found" };
+      }
+
+      const isHome = match.homeTeamId === data.teamId;
+
+      const result = await this.prismaService.$transaction(async (prisma) => {
+        if (data.eventType === "Goal") {
+          await prisma.match.update({
+            where: { id: data.matchId },
+            data: isHome
+              ? { homeScore: { increment: 1 } }
+              : { awayScore: { increment: 1 } },
+          });
+        }
+
+        const matchEvent = await prisma.matchEvent.create({
+          data: {
+            matchId: data.matchId,
+            playerId: data.playerId,
+            eventTeamId: data.teamId,
+            minute: data.min,
+            eventType: data.eventType,
+            processingStatus: "PENDING",
+          },
+        });
+
+        return matchEvent;
+      });
+
+      eventBus.emit(EVENT_HANDLER, { eventId: result.id });
+
+      return { ok: true, data: result };
     } catch (error) {
-      return {
-        ok: false,
-        error: (error as Error).message,
-      };
+      return { ok: false, error: (error as Error).message };
     }
   }
 

@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { ApiResponseBuilder } from "../../common/utils/ApiResponse";
 import { PlayerService } from "./player.service";
 import { GalleryService } from "../gallery/gallery.service";
-import { prisma } from "../../config/db";
+import { prisma } from "../../config/db.config";
 const gallery = new GalleryService();
 const playerService = new PlayerService(prisma, gallery);
 
@@ -94,6 +94,40 @@ export class PlayerControl {
         new ApiResponseBuilder()
           .created("player found")
           .withData(playerName.data)
+          .build(res)
+      );
+  }
+  static async transferPlayer(req: Request, res: Response) {
+    const { playerId, newTeamId, newNumber } = req.body;
+
+    if (!playerId || !newTeamId || typeof newNumber !== "number") {
+      return res
+        .status(400)
+        .json(
+          new ApiResponseBuilder()
+            .badRequest("Provide playerId, newTeamId, and newNumber")
+            .build(res)
+        );
+    }
+
+    const result = await playerService.playerTransfer(
+      playerId,
+      newTeamId,
+      newNumber
+    );
+
+    if (!result.ok) {
+      return res
+        .status(400)
+        .json(new ApiResponseBuilder().badRequest(result.error).build(res));
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponseBuilder()
+          .ok("Player transferred successfully")
+          .withData(result.data)
           .build(res)
       );
   }
