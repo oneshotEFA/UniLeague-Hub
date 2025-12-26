@@ -1,5 +1,5 @@
 import { isRecoverable, withRetry } from "../../common/utils/utility";
-import { prisma } from "../../config/db";
+import { prisma } from "../../config/db.config";
 import { GalleryService } from "../../modules/gallery/gallery.service";
 import { NotificationService } from "../../modules/notifications/notification.servie";
 import { TournamentService } from "../../modules/tournaments/tournament.service";

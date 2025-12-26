@@ -1,5 +1,5 @@
 import { error } from "console";
-import { prisma } from "../../config/db";
+import { prisma } from "../../config/db.config";
 import {
   MatchEvent,
   playerExist,

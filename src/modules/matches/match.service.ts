@@ -8,7 +8,7 @@
 - getMatchesByTeam()
 - getTodayMatches()
 - getLiveMatches() */
-import { prisma } from "../../config/db";
+import { prisma } from "../../config/db.config";
 import { match, UpdateMatchSchedule } from "./mtype";
 import { eventBus } from "../../events/event-bus";
 import { MATCH_FINISHED, TEAMPOWER } from "../../events/events";

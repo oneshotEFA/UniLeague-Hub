@@ -1,11 +1,11 @@
-import { prisma } from '../../config/db';
-import { TournamentService } from '../tournaments/tournament.service';
-import { tournament } from '../tournaments/utility';
+import { prisma } from "../../config/db.config";
+import { TournamentService } from "../tournaments/tournament.service";
+import { tournament } from "../tournaments/utility";
 import {
   fixtureMatchesType,
   parseSeason,
   UpdateTournament,
-} from '../tournaments/utility';
+} from "../tournaments/utility";
 export class AdminService {
   constructor(
     private prismaService = prisma,
@@ -18,7 +18,7 @@ export class AdminService {
       if (!data) {
         return {
           ok: false,
-          error: 'data required',
+          error: "data required",
         };
       }
       const tournament = await this.tournamentService.createTournament(data);
@@ -29,7 +29,7 @@ export class AdminService {
     } catch (error: any) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : 'unexpected error',
+        error: error instanceof Error ? error.message : "unexpected error",
       };
     }
   }
@@ -40,7 +40,7 @@ export class AdminService {
       if (!data) {
         return {
           ok: false,
-          error: 'data required',
+          error: "data required",
         };
       }
       const update = await this.tournamentService.updateTournament(data);
@@ -51,7 +51,7 @@ export class AdminService {
     } catch (error: any) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : 'unexpected error',
+        error: error instanceof Error ? error.message : "unexpected error",
       };
     }
   }
@@ -62,7 +62,7 @@ export class AdminService {
       if (!id) {
         return {
           ok: false,
-          error: 'id is required',
+          error: "id is required",
         };
       }
       const deletedTournament = await this.tournamentService.deleteTournament(
@@ -75,7 +75,7 @@ export class AdminService {
     } catch (error: any) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : 'unexpected error',
+        error: error instanceof Error ? error.message : "unexpected error",
       };
     }
   }
@@ -86,7 +86,7 @@ export class AdminService {
       if (!tournamentId) {
         return {
           ok: false,
-          error: 'tournament id is required',
+          error: "tournament id is required",
         };
       }
       const teams = await this.tournamentService.getTournamentTeams(
@@ -99,7 +99,7 @@ export class AdminService {
     } catch (error: any) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : 'unexpected error',
+        error: error instanceof Error ? error.message : "unexpected error",
       };
     }
   }
@@ -110,7 +110,7 @@ export class AdminService {
       if (!managerId || !tournamentId) {
         return {
           ok: false,
-          error: 'Both id is required',
+          error: "Both id is required",
         };
       }
       const tournament = await this.prismaService.tournament.findUnique({
@@ -120,7 +120,7 @@ export class AdminService {
       if (!tournament) {
         return {
           ok: false,
-          error: 'no tournament by this id',
+          error: "no tournament by this id",
         };
       }
       const manager = await this.prismaService.admin.findUnique({
@@ -129,7 +129,7 @@ export class AdminService {
       if (!manager) {
         return {
           ok: false,
-          error: 'no manager in this',
+          error: "no manager in this",
         };
       }
       const assignManager = await this.prismaService.tournament.update({
@@ -144,7 +144,7 @@ export class AdminService {
     } catch (error: any) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : 'unexpected error',
+        error: error instanceof Error ? error.message : "unexpected error",
       };
     }
   }
@@ -162,7 +162,7 @@ export class AdminService {
     } catch (error: any) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : 'unexpected error',
+        error: error instanceof Error ? error.message : "unexpected error",
       };
     }
   }
@@ -173,7 +173,7 @@ export class AdminService {
       if (!tournamentId || !managerId) {
         return {
           ok: false,
-          error: 'Both id is required',
+          error: "Both id is required",
         };
       }
       const tournament = await this.prismaService.tournament.findUnique({
@@ -183,7 +183,7 @@ export class AdminService {
       if (!tournament) {
         return {
           ok: false,
-          error: 'no tournament by this id',
+          error: "no tournament by this id",
         };
       }
 
@@ -194,7 +194,7 @@ export class AdminService {
       if (!manager) {
         return {
           ok: false,
-          error: 'no manager in this',
+          error: "no manager in this",
         };
       }
       const removed = await this.prismaService.tournament.update({
@@ -208,7 +208,7 @@ export class AdminService {
     } catch (error: any) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : 'unexpected error',
+        error: error instanceof Error ? error.message : "unexpected error",
       };
     }
   }
@@ -219,7 +219,7 @@ export class AdminService {
   async getAllAdmin() {
     try {
       const allAdmin = await this.prismaService.admin.findMany({
-        where: { role: 'tournamentManager' },
+        where: { role: "tournamentManager" },
       });
 
       return {

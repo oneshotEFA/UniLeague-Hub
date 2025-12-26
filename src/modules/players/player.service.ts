@@ -1,6 +1,6 @@
-import { prisma } from '../../config/db';
-import { GalleryService } from '../gallery/gallery.service';
-import { handleRedCard, handleYellowCard } from './utility';
+import { prisma } from "../../config/db.config";
+import { GalleryService } from "../gallery/gallery.service";
+import { handleRedCard, handleYellowCard } from "./utility";
 
 export class PlayerService {
   constructor(
@@ -20,7 +20,7 @@ export class PlayerService {
       if (!name || !position || number <= 0 || !teamId) {
         return {
           ok: false,
-          error: 'Invalid input parameters!!',
+          error: "Invalid input parameters!!",
         };
       }
 
@@ -30,7 +30,7 @@ export class PlayerService {
       if (!teamExists) {
         return {
           ok: false,
-          error: 'This team does not exist!!',
+          error: "This team does not exist!!",
         };
       }
 
@@ -41,7 +41,7 @@ export class PlayerService {
       if (exists) {
         return {
           ok: false,
-          error: 'Player number already taken in this team',
+          error: "Player number already taken in this team",
         };
       }
       const player = await this.prismaService.player.create({
@@ -58,8 +58,8 @@ export class PlayerService {
         avatar = await this.galleryService.savePicture(
           playerPhoto.buffer,
           player.id,
-          'PLAYER',
-          'AVATAR',
+          "PLAYER",
+          "AVATAR",
           true
         );
       }
@@ -90,9 +90,9 @@ export class PlayerService {
       const result = [];
       for (const player of players) {
         const avatar = await this.galleryService.getImagesByOwner(
-          'PLAYER',
+          "PLAYER",
           player.id,
-          'AVATAR'
+          "AVATAR"
         );
 
         result.push({
@@ -120,7 +120,7 @@ export class PlayerService {
       if (!id) {
         return {
           ok: false,
-          error: 'Player ID must be provided.',
+          error: "Player ID must be provided.",
         };
       }
 
@@ -131,7 +131,7 @@ export class PlayerService {
       if (!player) {
         return {
           ok: false,
-          error: 'player not found !!!',
+          error: "player not found !!!",
         };
       }
 
@@ -147,9 +147,9 @@ export class PlayerService {
       });
 
       const avatar = await this.galleryService.getImagesByOwner(
-        'PLAYER',
+        "PLAYER",
         id,
-        'AVATAR'
+        "AVATAR"
       );
 
       return {
@@ -167,10 +167,10 @@ export class PlayerService {
         },
       };
     } catch (error: any) {
-      console.error('Error fetching player by ID:', error);
+      console.error("Error fetching player by ID:", error);
       return {
         ok: false,
-        error: error.message || 'An unexpected error occurred.',
+        error: error.message || "An unexpected error occurred.",
       };
     }
   }
@@ -187,7 +187,7 @@ export class PlayerService {
       if (!id) {
         return {
           ok: false,
-          error: 'player id required',
+          error: "player id required",
         };
       }
 
@@ -198,7 +198,7 @@ export class PlayerService {
       if (!player) {
         return {
           ok: false,
-          error: 'Player not found!!!',
+          error: "Player not found!!!",
         };
       }
 
@@ -214,7 +214,7 @@ export class PlayerService {
         if (exists) {
           return {
             ok: false,
-            error: 'Another player already has the number change number',
+            error: "Another player already has the number change number",
           };
         }
       }
@@ -233,8 +233,8 @@ export class PlayerService {
         const existingAvatar = await this.prismaService.mediaGallery.findFirst({
           where: {
             ownerId: id,
-            ownerType: 'PLAYER',
-            usage: 'AVATAR',
+            ownerType: "PLAYER",
+            usage: "AVATAR",
             isPrimary: true,
           },
           select: {
@@ -246,8 +246,8 @@ export class PlayerService {
         await this.galleryService.savePicture(
           avatar.buffer,
           id,
-          'PLAYER',
-          'AVATAR',
+          "PLAYER",
+          "AVATAR",
           true
         );
 
@@ -279,14 +279,14 @@ export class PlayerService {
       if (!exists) {
         return {
           ok: false,
-          error: 'Player not found !!!',
+          error: "Player not found !!!",
         };
       }
       const existingAvatar = await this.prismaService.mediaGallery.findFirst({
         where: {
           ownerId: id,
-          ownerType: 'PLAYER',
-          usage: 'AVATAR',
+          ownerType: "PLAYER",
+          usage: "AVATAR",
           isPrimary: true,
         },
         select: { publicId: true },
@@ -295,14 +295,14 @@ export class PlayerService {
         try {
           await this.galleryService.deleteImage(existingAvatar.publicId);
         } catch (deleteError) {
-          console.log('error deleting avatar', deleteError);
+          console.log("error deleting avatar", deleteError);
         }
       }
 
       await this.prismaService.player.delete({ where: { id } });
       return {
         ok: true,
-        data: 'Player deleted successfully',
+        data: "Player deleted successfully",
       };
     } catch (error: any) {
       return {
@@ -334,19 +334,19 @@ export class PlayerService {
   // search player by name
   async searchPlayerByName(name: string) {
     try {
-      console.log('Received name:', name);
+      console.log("Received name:", name);
       const fineName = name.trim();
       if (!fineName) {
         return {
           ok: false,
-          error: 'Player name cannot be empty.',
+          error: "Player name cannot be empty.",
         };
       }
       const players = await this.prismaService.player.findMany({
         where: {
           name: {
             contains: fineName,
-            mode: 'insensitive',
+            mode: "insensitive",
           },
         },
         include: {
@@ -360,15 +360,15 @@ export class PlayerService {
       if (players.length === 0) {
         return {
           ok: false,
-          error: 'Player not found.',
+          error: "Player not found.",
         };
       }
       const result = await Promise.all(
-        players.map(async player => {
+        players.map(async (player) => {
           const avatar = await this.galleryService.getImagesByOwner(
-            'PLAYER',
+            "PLAYER",
             player.id,
-            'AVATAR'
+            "AVATAR"
           );
           return {
             ...player,
@@ -382,10 +382,10 @@ export class PlayerService {
         data: result,
       };
     } catch (error: any) {
-      console.error('Error searching for player:', error);
+      console.error("Error searching for player:", error);
       return {
         ok: false,
-        error: error.message || 'An unexpected error occurred.',
+        error: error.message || "An unexpected error occurred.",
       };
     }
   }
@@ -397,7 +397,7 @@ export class PlayerService {
       if (!playerId || !newTeamId || newNumber < 0) {
         return {
           ok: false,
-          error: 'invalid input check again!',
+          error: "invalid input check again!",
         };
       }
 
@@ -407,7 +407,7 @@ export class PlayerService {
       if (!checkPlayer) {
         return {
           ok: false,
-          error: 'player does not exist',
+          error: "player does not exist",
         };
       }
 
@@ -418,7 +418,7 @@ export class PlayerService {
       if (!checkTeam) {
         return {
           ok: false,
-          error: 'the new team does not exist',
+          error: "the new team does not exist",
         };
       }
       const checkNumber = await this.prismaService.player.findMany({
@@ -430,14 +430,14 @@ export class PlayerService {
       if (checkNumber.length > 0) {
         return {
           ok: false,
-          error: 'the number is taken by other player in the team',
+          error: "the number is taken by other player in the team",
         };
       }
 
       if (checkPlayer.teamId === newTeamId) {
         return {
           ok: false,
-          error: 'transfer to same team is not allowed',
+          error: "transfer to same team is not allowed",
         };
       }
 
@@ -461,23 +461,23 @@ export class PlayerService {
     }
   }
   async playerStatHandler({ eventId }: { eventId: string }) {
-    console.log('bye');
-    await prisma.$transaction(async tx => {
+    console.log("bye");
+    await prisma.$transaction(async (tx) => {
       const event = await tx.matchEvent.findUnique({
         where: { id: eventId },
       });
 
       if (!event) {
-        throw new Error('MatchEvent not found');
+        throw new Error("MatchEvent not found");
       }
 
-      if (event.processingStatus === 'PROCESSED') {
+      if (event.processingStatus === "PROCESSED") {
         // Idempotency guard
         return;
       }
 
       switch (event.eventType) {
-        case 'Goal':
+        case "Goal":
           await tx.playerMatchStats.upsert({
             where: {
               playerId_matchId: {
@@ -505,11 +505,11 @@ export class PlayerService {
           });
           break;
 
-        case 'Yellow':
+        case "Yellow":
           await handleYellowCard(tx, event);
           break;
 
-        case 'Red':
+        case "Red":
           await handleRedCard(tx, event);
           break;
       }
@@ -517,7 +517,7 @@ export class PlayerService {
       await tx.matchEvent.update({
         where: { id: event.id },
         data: {
-          processingStatus: 'PROCESSED',
+          processingStatus: "PROCESSED",
         },
       });
     });

@@ -1,5 +1,5 @@
-import { ai } from "../../config/ai";
-import { prisma } from "../../config/db";
+import { ai } from "../../config/ai.config";
+import { prisma } from "../../config/db.config";
 // import { promises as fs } from "fs";
 import { aiApiCall, collectTeamStats, downloadImages } from "./utility/common";
 import {

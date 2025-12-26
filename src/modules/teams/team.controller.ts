@@ -2,7 +2,7 @@ import { TeamService } from "./team.service";
 import { GalleryService } from "../gallery/gallery.service";
 import { Request, Response } from "express";
 import { ApiResponseBuilder } from "../../common/utils/ApiResponse";
-import { prisma } from "../../config/db";
+import { prisma } from "../../config/db.config";
 
 const gallery = new GalleryService();
 const teamService = new TeamService(prisma, gallery);

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { ApiResponseBuilder } from "../common/utils/ApiResponse";
 import { HttpStatusCode } from "../common/constants/http";
-import { prisma } from "../config/db";
+import { prisma } from "../config/db.config";
 
 import { PlayerService } from "../modules/players/player.service";
 import { GalleryService } from "../modules/gallery/gallery.service";

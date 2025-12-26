@@ -1,8 +1,8 @@
-import { Request, Response } from 'express';
-import { NotificationService } from './notification.servie';
-import { ApiResponseBuilder } from '../../common/utils/ApiResponse';
-import { GalleryService } from '../gallery/gallery.service';
-import { prisma } from '../../config/db';
+import { Request, Response } from "express";
+import { NotificationService } from "./notification.servie";
+import { ApiResponseBuilder } from "../../common/utils/ApiResponse";
+import { GalleryService } from "../gallery/gallery.service";
+import { prisma } from "../../config/db.config";
 
 const gallery = new GalleryService();
 
@@ -26,7 +26,7 @@ export class NotificationController {
       .status(200)
       .json(
         new ApiResponseBuilder()
-          .created('notification fetched')
+          .created("notification fetched")
           .withData(notification.data)
           .build(res)
       );
@@ -51,7 +51,7 @@ export class NotificationController {
       .status(200)
       .json(
         new ApiResponseBuilder()
-          .created('broadcast notification is fetch')
+          .created("broadcast notification is fetch")
           .withData(notfication.data)
           .build(res)
       );
@@ -68,16 +68,14 @@ export class NotificationController {
       return res
         .status(400)
         .json(
-          new ApiResponseBuilder()
-          .badRequest(notification.error)
-          .build(res)
+          new ApiResponseBuilder().badRequest(notification.error).build(res)
         );
     }
     return res
       .status(200)
       .json(
         new ApiResponseBuilder()
-          .created('tournament broadcast fetched')
+          .created("tournament broadcast fetched")
           .withData(notification.data)
           .build(res)
       );

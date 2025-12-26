@@ -1,5 +1,5 @@
 import { Prisma } from "../../../generated/prisma";
-import { prisma } from "../../config/db";
+import { prisma } from "../../config/db.config";
 import { GalleryService } from "../gallery/gallery.service";
 export class TeamService {
   constructor(

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ApiResponseBuilder } from "../../common/utils/ApiResponse";
 import { TournamentService } from "./tournament.service";
-import { prisma } from "../../config/db";
+import { prisma } from "../../config/db.config";
 import { GalleryService } from "../gallery/gallery.service";
 const gallery = new GalleryService();
 const tournamentService = new TournamentService(prisma, gallery);

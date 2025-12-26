@@ -1,8 +1,8 @@
-import { Request, Response } from 'express';
-import { ApiResponseBuilder } from '../../common/utils/ApiResponse';
-import { PlayerService } from './player.service';
-import { GalleryService } from '../gallery/gallery.service';
-import { prisma } from '../../config/db';
+import { Request, Response } from "express";
+import { ApiResponseBuilder } from "../../common/utils/ApiResponse";
+import { PlayerService } from "./player.service";
+import { GalleryService } from "../gallery/gallery.service";
+import { prisma } from "../../config/db.config";
 const gallery = new GalleryService();
 const playerService = new PlayerService(prisma, gallery);
 
@@ -30,7 +30,7 @@ export class PlayerControl {
       .status(201)
       .json(
         new ApiResponseBuilder()
-          .created('player created')
+          .created("player created")
           .withData(values.data)
           .build(res)
       );
@@ -50,7 +50,7 @@ export class PlayerControl {
       .status(200)
       .json(
         new ApiResponseBuilder()
-          .ok('players fetched')
+          .ok("players fetched")
           .withData(values.data)
           .build(res)
       );
@@ -72,7 +72,7 @@ export class PlayerControl {
       .status(200)
       .json(
         new ApiResponseBuilder()
-          .ok('player found')
+          .ok("player found")
           .withData(value.data)
           .build(res)
       );
@@ -92,7 +92,7 @@ export class PlayerControl {
       .status(200)
       .json(
         new ApiResponseBuilder()
-          .created('player found')
+          .created("player found")
           .withData(playerName.data)
           .build(res)
       );
@@ -100,12 +100,12 @@ export class PlayerControl {
   static async transferPlayer(req: Request, res: Response) {
     const { playerId, newTeamId, newNumber } = req.body;
 
-    if (!playerId || !newTeamId || typeof newNumber !== 'number') {
+    if (!playerId || !newTeamId || typeof newNumber !== "number") {
       return res
         .status(400)
         .json(
           new ApiResponseBuilder()
-            .badRequest('Provide playerId, newTeamId, and newNumber')
+            .badRequest("Provide playerId, newTeamId, and newNumber")
             .build(res)
         );
     }
@@ -126,7 +126,7 @@ export class PlayerControl {
       .status(200)
       .json(
         new ApiResponseBuilder()
-          .ok('Player transferred successfully')
+          .ok("Player transferred successfully")
           .withData(result.data)
           .build(res)
       );
