@@ -240,7 +240,7 @@ Return the response strictly in the following JSON format:
   "category": "string",
   "message": "string", 
   "messageDeveloper": "string",
-  "severity": "string"
+  "severity": 'critical' | 'high' | 'warning' | 'low' | 'info'
 }
 `;
 }
