@@ -40,7 +40,12 @@ export class teamControl {
     }
     return res
       .status(200)
-      .json(new ApiResponseBuilder().ok("teams fetched").withData(value.data).build(res));
+      .json(
+        new ApiResponseBuilder()
+          .ok("teams fetched")
+          .withData(value.data)
+          .build(res)
+      );
   }
 
   // get team by id
@@ -54,7 +59,12 @@ export class teamControl {
     }
     return res
       .status(200)
-      .json(new ApiResponseBuilder().ok("team found").withData(value.data).build(res));
+      .json(
+        new ApiResponseBuilder()
+          .ok("team found")
+          .withData(value.data)
+          .build(res)
+      );
   }
 
   // update team
@@ -70,7 +80,12 @@ export class teamControl {
     }
     return res
       .status(200)
-      .json(new ApiResponseBuilder().ok("team updated").withData(value.data).build(res));
+      .json(
+        new ApiResponseBuilder()
+          .ok("team updated")
+          .withData(value.data)
+          .build(res)
+      );
   }
 
   // delete team
@@ -84,7 +99,12 @@ export class teamControl {
     }
     return res
       .status(200)
-      .json(new ApiResponseBuilder().ok("team removed").withData(value.data).build(res));
+      .json(
+        new ApiResponseBuilder()
+          .ok("team removed")
+          .withData(value.data)
+          .build(res)
+      );
   }
 
   // search team by name
@@ -98,7 +118,12 @@ export class teamControl {
     }
     return res
       .status(200)
-      .json(new ApiResponseBuilder().ok("team found").withData(value.data).build(res));
+      .json(
+        new ApiResponseBuilder()
+          .ok("team found")
+          .withData(value.data)
+          .build(res)
+      );
   }
 
   // team status
@@ -112,6 +137,11 @@ export class teamControl {
     }
     return res
       .status(200)
-      .json(new ApiResponseBuilder().ok("team status").withData(value.data).build(res));
+      .json(
+        new ApiResponseBuilder()
+          .ok("team status")
+          .withData(value.data)
+          .build(res)
+      );
   }
 }
