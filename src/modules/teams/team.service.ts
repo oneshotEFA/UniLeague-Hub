@@ -324,5 +324,31 @@ export class TeamService {
 
   }
 
-  
+
+}
+// get all teams
+async getAllTeams() {
+  try {
+    const teams = await this.PrismaService.team.findMany();
+
+    const result = await Promise.all(
+      teams.map(async team => {
+        const logo = await this.galleryService.getImagesByOwner("TEAM", team.id);
+        return {
+          ...team,
+          logo
+        };
+      })
+    );
+
+    return {
+      ok: true,
+      data: result
+    };
+  } catch (error: any) {
+    return {
+      ok: false,
+      error: error.message
+    };
+  }
 }
