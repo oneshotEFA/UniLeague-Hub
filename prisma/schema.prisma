@@ -54,6 +54,7 @@ enum MediaOwnerType {
   MATCH
   TEAM
   PLAYER
+  WEB
 }
 
 enum ImageUsage {
@@ -126,7 +127,7 @@ model Team {
 // TOURNAMENT
 model Tournament {
   id             String     @id @default(uuid())
-  managerId      String
+  managerId      String?
   tournamentName String
   startingDate   DateTime
   endingDate     DateTime 
@@ -136,7 +137,7 @@ model Tournament {
   status         TournamentStatus
 //relation
   notification    Notification[]
-  manager        Admin       @relation("ManagedTournaments", fields: [managerId], references: [id], onDelete: Cascade)
+  manager        Admin?       @relation("ManagedTournaments", fields: [managerId], references: [id], onDelete: Cascade)
   teams          TournamentTeam[]
   matches        Match[]
   standings      TournamentStanding[]   
@@ -298,17 +299,17 @@ model Notification {
 
   type             NotificationType
 
-  message          String
+  message          String?
 
   // Scope
   tournamentId     String?           // null = platform-wide
-  receiverAdminId  String?           // null = broadcast
+  receiverAdminId  String?         // null = broadcast
   senderAdminId    String?           // null = system / AI
 
   // State
   isRead           Boolean           @default(false)
   readAt           DateTime?
-
+  meta             Json?
   // Metadata
   createdAt        DateTime          @default(now())
 
