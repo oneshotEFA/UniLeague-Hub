@@ -2,10 +2,12 @@ import { generateTeamKey } from "../../common/utils/utility";
 import { prisma } from "../../config/db.config";
 import { eventBus } from "../../events/event-bus";
 import { REGISTIRATION_KEY } from "../../events/events";
+import { AiService } from "../_AI/ai.service";
+import { TeamInput } from "../_AI/utility/type";
 import { NotificationService } from "../notifications/notification.servie";
 import { TeamService } from "../teams/team.service";
 import { TournamentService } from "../tournaments/tournament.service";
-
+import { GenerateFixtureInput } from "./type";
 export class ManagerServices {
   constructor(
     private prismaService = prisma,
@@ -133,7 +135,7 @@ export class ManagerServices {
       teamInfo.data!.team.id
     );
     const key = generateTeamKey(teamInfo.data!.team.id);
-    console.log("evemt called");
+
     eventBus.emit(REGISTIRATION_KEY, {
       key,
       email: teamInfo.data!.team.coachEmail,
@@ -145,5 +147,42 @@ export class ManagerServices {
       };
     }
     return res;
+  }
+  async generateFixture(input: GenerateFixtureInput) {
+    try {
+      if (input.tournamentType === "League") {
+        const { teams, rounds, matchesPerWeek, startingDate } = input;
+        const fixture = await AiService.generateRandomLeagueFixture({
+          teams,
+          rounds,
+          matchesPerWeek,
+          startDate: startingDate,
+          daysBetweenWeeks: 7,
+        });
+        return {
+          ok: true,
+          data: fixture,
+        };
+      } else if (input.tournamentType === "knockout") {
+        const { teams, startingDate } = input;
+        const fixture = await AiService.generateKnockoutBracket({ teams });
+        return {
+          ok: true,
+          data: fixture,
+        };
+      }
+      return {
+        ok: false,
+        error: "invalid input",
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : "unexpected error",
+      };
+    }
+  }
+  async createNews(tournamentId: string, content: any) {
+    // const res = await this.notificationService.broadCastToTournament;
   }
 }

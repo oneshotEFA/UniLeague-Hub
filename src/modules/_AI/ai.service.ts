@@ -57,8 +57,10 @@ export class AiService {
 
           if (home.id !== "BYE" && away.id !== "BYE") {
             matches.push({
-              homeTeamId: home.name,
-              awayTeamId: away.name,
+              homeTeamId: home.id,
+              awayTeamId: away.id,
+              homeTeamName: home.name,
+              awayTeamName: away.name,
               date: currentDate.toISOString().split("T")[0],
             });
           }
@@ -191,6 +193,8 @@ export class AiService {
               group.fixtures.push({
                 homeTeamId: t[i].id,
                 awayTeamId: t[j].id,
+                homeTeamName: t[i].name,
+                awayTeamName: t[j].name,
                 group: group.groupName,
               });
             }

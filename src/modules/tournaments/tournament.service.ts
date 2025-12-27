@@ -415,6 +415,7 @@ export class TournamentService {
     try {
       const standing = await this.prismaService.tournamentStanding.findMany({
         where: { tournamentId },
+        include: { team: { select: { teamName: true } } },
         orderBy: { points: "desc" },
       });
       if (!standing) return { ok: false, error: "not found" };

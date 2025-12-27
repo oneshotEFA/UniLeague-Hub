@@ -7,7 +7,7 @@ import teamRouter from "../modules/teams/team.route";
 import eventRouter from "../modules/match-events/macth-event.route";
 import matchesRouter from "../modules/matches/match.route";
 import tournamentRoute from "../modules/tournaments/tournament.route";
-import adminRouter from "../modules/admin/admin.route";
+import managerRouter from "../modules/admin/manager.route";
 
 const apiRouter = Router();
 apiRouter.use("/auth", authRouter);
@@ -17,5 +17,5 @@ apiRouter.use("/player", playerRouter);
 apiRouter.use("/teams", teamRouter);
 apiRouter.use("/event", eventRouter);
 apiRouter.use("/matches", matchesRouter); // Placeholder for match routes
-apiRouter.use("/admin", adminRouter);
+apiRouter.use("/manager", managerRouter);
 export default apiRouter;

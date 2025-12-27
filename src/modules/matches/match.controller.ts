@@ -140,7 +140,8 @@ export class MatchController {
 
   // GET ALL MATCHES
   static async getMatches(req: Request, res: Response) {
-    const result = await matchService.getMatches();
+    const { id } = req.params;
+    const result = await matchService.getMatches(id);
     if (!result.ok) {
       return new ApiResponseBuilder().notFound(result.error!).build(res);
     }

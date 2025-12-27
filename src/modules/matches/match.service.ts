@@ -175,10 +175,15 @@ export class MatchService {
           homeTeam: true,
           awayTeam: true,
           tournament: true,
-          events: true,
-          goalScore: true,
-          playerMatchStats: true,
-          matchStats: true,
+          events: {
+            select: {
+              id: true,
+              eventType: true,
+              minute: true,
+              team: { select: { teamName: true } },
+              player: { select: { name: true } },
+            },
+          },
         },
       });
       if (!match) {
@@ -320,9 +325,10 @@ export class MatchService {
     }
   }
 
-  async getMatches() {
+  async getMatches(id: string) {
     try {
       const matches = await this.prismaService.match.findMany({
+        where: { tournamentId: id },
         include: {
           homeTeam: true,
           awayTeam: true,
