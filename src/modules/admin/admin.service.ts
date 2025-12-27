@@ -1,15 +1,30 @@
-import { prisma } from "../../config/db.config";
-import { TournamentService } from "../tournaments/tournament.service";
-import { tournament } from "../tournaments/utility";
-import {
-  fixtureMatchesType,
-  parseSeason,
-  UpdateTournament,
-} from "../tournaments/utility";
+import { prisma } from '../../config/db.config';
+import { TournamentService } from '../tournaments/tournament.service';
+import { tournament } from '../tournaments/utility';
+import { UpdateTournament } from '../tournaments/utility';
+import { NotificationService } from '../notifications/notification.servie';
+
+interface NewsContent {
+  type: string;
+  message: string;
+  title: string;
+  body: string;
+  category: string;
+}
+
+interface UpdateNews {
+  type?: string;
+  message?: string;
+  title?: string;
+  body?: string;
+  category?: string;
+  image?: Express.Multer.File;
+}
 export class AdminService {
   constructor(
     private prismaService = prisma,
-    private tournamentService: TournamentService
+    private tournamentService: TournamentService,
+    private notificationService: NotificationService
   ) {}
 
   // create a tournament
@@ -18,7 +33,7 @@ export class AdminService {
       if (!data) {
         return {
           ok: false,
-          error: "data required",
+          error: 'data required',
         };
       }
       const tournament = await this.tournamentService.createTournament(data);
@@ -29,7 +44,7 @@ export class AdminService {
     } catch (error: any) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "unexpected error",
+        error: error instanceof Error ? error.message : 'unexpected error',
       };
     }
   }
@@ -40,7 +55,7 @@ export class AdminService {
       if (!data) {
         return {
           ok: false,
-          error: "data required",
+          error: 'data required',
         };
       }
       const update = await this.tournamentService.updateTournament(data);
@@ -51,7 +66,7 @@ export class AdminService {
     } catch (error: any) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "unexpected error",
+        error: error instanceof Error ? error.message : 'unexpected error',
       };
     }
   }
@@ -62,7 +77,7 @@ export class AdminService {
       if (!id) {
         return {
           ok: false,
-          error: "id is required",
+          error: 'id is required',
         };
       }
       const deletedTournament = await this.tournamentService.deleteTournament(
@@ -75,7 +90,7 @@ export class AdminService {
     } catch (error: any) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "unexpected error",
+        error: error instanceof Error ? error.message : 'unexpected error',
       };
     }
   }
@@ -86,7 +101,7 @@ export class AdminService {
       if (!tournamentId) {
         return {
           ok: false,
-          error: "tournament id is required",
+          error: 'tournament id is required',
         };
       }
       const teams = await this.tournamentService.getTournamentTeams(
@@ -99,7 +114,7 @@ export class AdminService {
     } catch (error: any) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "unexpected error",
+        error: error instanceof Error ? error.message : 'unexpected error',
       };
     }
   }
@@ -110,7 +125,7 @@ export class AdminService {
       if (!managerId || !tournamentId) {
         return {
           ok: false,
-          error: "Both id is required",
+          error: 'Both id is required',
         };
       }
       const tournament = await this.prismaService.tournament.findUnique({
@@ -120,7 +135,7 @@ export class AdminService {
       if (!tournament) {
         return {
           ok: false,
-          error: "no tournament by this id",
+          error: 'no tournament by this id',
         };
       }
       const manager = await this.prismaService.admin.findUnique({
@@ -129,7 +144,7 @@ export class AdminService {
       if (!manager) {
         return {
           ok: false,
-          error: "no manager in this",
+          error: 'no manager in this',
         };
       }
       const assignManager = await this.prismaService.tournament.update({
@@ -144,7 +159,7 @@ export class AdminService {
     } catch (error: any) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "unexpected error",
+        error: error instanceof Error ? error.message : 'unexpected error',
       };
     }
   }
@@ -162,7 +177,7 @@ export class AdminService {
     } catch (error: any) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "unexpected error",
+        error: error instanceof Error ? error.message : 'unexpected error',
       };
     }
   }
@@ -173,7 +188,7 @@ export class AdminService {
       if (!tournamentId || !managerId) {
         return {
           ok: false,
-          error: "Both id is required",
+          error: 'Both id is required',
         };
       }
       const tournament = await this.prismaService.tournament.findUnique({
@@ -183,7 +198,7 @@ export class AdminService {
       if (!tournament) {
         return {
           ok: false,
-          error: "no tournament by this id",
+          error: 'no tournament by this id',
         };
       }
 
@@ -194,7 +209,7 @@ export class AdminService {
       if (!manager) {
         return {
           ok: false,
-          error: "no manager in this",
+          error: 'no manager in this',
         };
       }
       const removed = await this.prismaService.tournament.update({
@@ -208,18 +223,17 @@ export class AdminService {
     } catch (error: any) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "unexpected error",
+        error: error instanceof Error ? error.message : 'unexpected error',
       };
     }
   }
 
-  //replace tor
 
   // get all admin
   async getAllAdmin() {
     try {
       const allAdmin = await this.prismaService.admin.findMany({
-        where: { role: "tournamentManager" },
+        where: { role: 'tournamentManager' },
       });
 
       return {
@@ -232,6 +246,152 @@ export class AdminService {
         ok: false,
         error: error.message,
       };
+    }
+  }
+
+  
+  // creating news
+  async createNews(content: NewsContent, image: Express.Multer.File) {
+    try {
+      if (!content.type || !content.title || !content.body) {
+        return {
+          ok: false,
+          error: 'each content is requierd',
+        };
+      }
+      if (!image) {
+        return {
+          ok: false,
+          error: 'image must be there for the news',
+        };
+      }
+      const news = await this.notificationService.broadCastToWeb(
+        content,
+        image
+      );
+      if (!news.ok) {
+        return {
+          ok: false,
+          error: news.error,
+        };
+      }
+      return {
+        ok: true,
+        data: news,
+      };
+    } catch (error: any) {
+      return {
+        ok: false,
+        error: error.message,
+      };
+    }
+  }
+
+
+  // update news
+  async updateNews(newsId: string, content: UpdateNews) {
+    try {
+      if (!newsId) {
+        return {
+          ok: false,
+          error: 'news id is requierd',
+        };
+      }
+      const update = await this.notificationService.updateBroadCast(
+        newsId,
+        content
+      );
+      if (!update.ok) {
+        return {
+          ok: false,
+          error: update.error,
+        };
+      }
+      return {
+        ok: true,
+        data: update,
+      };
+    } catch (error: any) {
+      return {
+        ok: false,
+        error: error.message,
+      };
+    }
+  }
+
+
+  // delete news
+  async deleteNews(newsId: string) {
+    try {
+      if (!newsId) {
+        return {
+          ok: false,
+          error: 'news id is requierd',
+        };
+      }
+      const deletedNews = await this.notificationService.deleteBroadCast(
+        newsId
+      );
+
+      if (!deletedNews.ok) {
+        return {
+          ok: false,
+          error: deletedNews.error,
+        };
+      }
+      return {
+        ok: true,
+        data: deletedNews,
+      };
+    } catch (error: any) {
+      return {
+        ok: false,
+        error: error.message,
+      };
+    }
+  }
+  
+  // get all news
+  async getAllNews(){
+    try{
+      const allNews = await this.notificationService.getBroadCastNotification();
+      if (!allNews.ok) {
+        return {
+          ok: false,
+          error: allNews.error,
+        };
+      }
+      return {
+        ok: true,
+        data: allNews.data
+      }
+    } catch (error: any){
+      return {
+        ok: false,
+        error: error.message
+      }
+    }
+  }
+
+  // get all system logs
+  async systemLogs(){
+    try{
+      const logs = await this.notificationService.getSystemCalls();
+      if (!logs.ok) {
+        return {
+          ok: false,
+          error: logs.error,
+        };
+      }
+      return{
+        ok: true,
+        data: logs
+      }
+    }catch (error: any){
+      return {
+        ok: false,
+        error: error.message
+      }
     }
   }
 }
