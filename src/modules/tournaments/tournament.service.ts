@@ -415,6 +415,7 @@ export class TournamentService {
     try {
       const standing = await this.prismaService.tournamentStanding.findMany({
         where: { tournamentId },
+        include: { team: { select: { teamName: true } } },
         orderBy: { points: "desc" },
       });
       if (!standing) return { ok: false, error: "not found" };
@@ -575,6 +576,39 @@ export class TournamentService {
       return {
         ok: false,
         error,
+      };
+    }
+  }
+  async getPlayersByTournament(tournamentId: string) {
+    try {
+      const teams = await this.prismaService.tournamentTeam.findMany({
+        where: { tournamentId },
+        select: {
+          team: {
+            select: {
+              id: true,
+              teamName: true,
+              players: {
+                select: {
+                  id: true,
+                  name: true,
+                  position: true,
+                  number: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return {
+        ok: true,
+        data: teams,
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        message: "Failed to fetch players",
       };
     }
   }

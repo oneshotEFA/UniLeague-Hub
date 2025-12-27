@@ -236,11 +236,11 @@ Instructions:
 
 Return the response strictly in the following JSON format:
 {
-  "type": "string",
-  "category": "string",
-  "message": "string", 
-  "messageDeveloper": "string",
-  "severity": 'critical' | 'high' | 'warning' | 'low' | 'info'
+    WhatType: string;
+    message: string;
+    category: string;
+    messageDeveloper: string;
+    severity: "critical" | "serious" | "warning" | "error";
 }
 `;
 }

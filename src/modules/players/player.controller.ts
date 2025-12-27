@@ -38,7 +38,7 @@ export class PlayerControl {
 
   // Get all players
   static async getPlayers(req: Request, res: Response) {
-    const { teamId } = req.query;
+    const { teamId } = req.params;
     const values = await playerService.getPlayers(teamId as string);
 
     if (!values.ok) {

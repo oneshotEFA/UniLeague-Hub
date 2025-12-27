@@ -19,5 +19,9 @@ router.get(
   "/:tournamentId/standings",
   TournamentController.getTournamentStandings
 );
+router.get(
+  "/:tournamentId/players",
+  TournamentController.getPlayersByTournament
+);
 
 export default router;
