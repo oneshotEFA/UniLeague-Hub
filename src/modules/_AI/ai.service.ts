@@ -4,6 +4,7 @@ import { prisma } from "../../config/db.config";
 import { aiApiCall, collectTeamStats, downloadImages } from "./utility/common";
 import {
   buildAnnouncementPrompt,
+  buildErrorAnalysisPrompt,
   buildGroupShufflePrompt,
   buildKnockoutPrompt,
   buildLeagueShufflePrompt,
@@ -369,6 +370,7 @@ export class AiService {
     return this.generateWithPrompt(buildAnnouncementPrompt, input);
   }
   static analysisError(input: any) {
-    return this.generateWithPrompt(buildAnnouncementPrompt, input);
+    console.log("ai called error found");
+    return this.generateWithPrompt(buildErrorAnalysisPrompt, input);
   }
 }

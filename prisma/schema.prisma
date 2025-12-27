@@ -111,7 +111,8 @@ model Player {
 model Team {
   id         String     @id @default(uuid())
   teamName   String     @unique
-
+  coachName   String?
+  coachEmail  String?
   power Int @default(0)
 
 //relation
