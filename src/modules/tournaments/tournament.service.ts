@@ -302,27 +302,31 @@ export class TournamentService {
     try {
       const teams = await this.prismaService.tournamentTeam.findMany({
         where: { tournamentId },
-        select: { team: true },
+        select: { team: true, id: true },
       });
+      const data = await Promise.all(
+        teams.map(async (team) => {
+          const logo = await this.galleryService.getImagesByOwner(
+            "TEAM",
+            team.id
+          );
+          const count = await this.prismaService.player.count({
+            where: { teamId: team.id },
+          });
+          return {
+            ...team,
+            playerCount: count,
+            logo,
+          };
+        })
+      );
       if (teams.length === 0) {
         return {
           ok: false,
           error: "No team found",
         };
       }
-      const data = await Promise.all(
-        teams.map(async (team) => {
-          const logo = await this.galleryService.getImagesByOwner(
-            "TEAM",
-            team.team.id,
-            "LOGO"
-          );
-          return {
-            ...team.team,
-            logoUrl: logo[0]?.url,
-          };
-        })
-      );
+
       return {
         ok: true,
         data,
