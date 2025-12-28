@@ -4,6 +4,7 @@ import { prisma } from "../../config/db.config";
 import { aiApiCall, collectTeamStats, downloadImages } from "./utility/common";
 import {
   buildAnnouncementPrompt,
+  buildErrorAnalysisPrompt,
   buildGroupShufflePrompt,
   buildKnockoutPrompt,
   buildLeagueShufflePrompt,
@@ -56,8 +57,10 @@ export class AiService {
 
           if (home.id !== "BYE" && away.id !== "BYE") {
             matches.push({
-              homeTeamId: home.name,
-              awayTeamId: away.name,
+              homeTeamId: home.id,
+              awayTeamId: away.id,
+              homeTeamName: home.name,
+              awayTeamName: away.name,
               date: currentDate.toISOString().split("T")[0],
             });
           }
@@ -190,6 +193,8 @@ export class AiService {
               group.fixtures.push({
                 homeTeamId: t[i].id,
                 awayTeamId: t[j].id,
+                homeTeamName: t[i].name,
+                awayTeamName: t[j].name,
                 group: group.groupName,
               });
             }
@@ -369,6 +374,7 @@ export class AiService {
     return this.generateWithPrompt(buildAnnouncementPrompt, input);
   }
   static analysisError(input: any) {
-    return this.generateWithPrompt(buildAnnouncementPrompt, input);
+    console.log("ai called error found");
+    return this.generateWithPrompt(buildErrorAnalysisPrompt, input);
   }
 }
