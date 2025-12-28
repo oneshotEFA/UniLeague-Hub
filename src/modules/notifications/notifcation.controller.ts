@@ -35,9 +35,7 @@ export class NotificationController {
   //get broad cast notification
   static async getBroadCastNotification(req: Request, res: Response) {
     const adminId = req.params.id;
-    const notfication = await notificationService.getBroadCastNotification(
-      adminId
-    );
+    const notfication = await notificationService.getBroadCastNotification();
 
     if (!notfication.ok) {
       return res
