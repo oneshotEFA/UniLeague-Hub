@@ -4,6 +4,7 @@ import { upload } from "../../middlewares/multer";
 import { PlayerControl } from "../players/player.controller";
 import { MatchController } from "../matches/match.controller";
 import { MatchEventController } from "../match-events/macth-event.controller";
+import { teamControl } from "../teams/team.controller";
 
 const route = Router();
 // teams
@@ -12,6 +13,7 @@ route.post(
   upload.single("logo"),
   ManagerController.registerTeam
 );
+route.delete("/team/delete/:id", teamControl.removeTeam);
 
 //matches
 route.post("/generate/fixture", ManagerController.generateFixture);

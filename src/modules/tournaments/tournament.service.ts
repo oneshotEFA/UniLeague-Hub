@@ -302,16 +302,16 @@ export class TournamentService {
     try {
       const teams = await this.prismaService.tournamentTeam.findMany({
         where: { tournamentId },
-        select: { team: true, id: true },
+        select: { team: true, teamId: true, id: true },
       });
       const data = await Promise.all(
         teams.map(async (team) => {
           const logo = await this.galleryService.getImagesByOwner(
             "TEAM",
-            team.id
+            team.teamId
           );
           const count = await this.prismaService.player.count({
-            where: { teamId: team.id },
+            where: { teamId: team.teamId },
           });
           return {
             ...team,
