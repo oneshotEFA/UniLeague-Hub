@@ -15,8 +15,8 @@ export class teamControl {
 
     const value = await teamService.createTeam(
       teamName,
-      coachName,
       coachEmail,
+      coachName,
       logo!
     );
 

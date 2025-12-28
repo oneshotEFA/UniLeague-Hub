@@ -4,3 +4,4 @@ import "./standings.listener";
 import "./standings.listener";
 import "./teampower.listner";
 import "./coachKeysender.listener";
+import "./transferNews.listner";

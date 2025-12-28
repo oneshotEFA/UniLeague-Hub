@@ -32,8 +32,8 @@ export class ManagerController {
 
       const result = await managerService.registerTeam(
         teamName,
-        coachName,
         coachEmail,
+        coachName,
         logo,
         tournamentId
       );

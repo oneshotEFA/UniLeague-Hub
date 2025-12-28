@@ -167,7 +167,9 @@ Example tone:
 
 Return the response in strictly this JSON structure:
 {
-  "announcement": "string"
+   "content": string,
+    "title": string,
+    "excerpt": string,
 }
 `;
 }
