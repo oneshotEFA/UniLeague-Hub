@@ -1,3 +1,4 @@
+
 import { Router } from "express";
 import { MatchController } from "./match.controller";
 
@@ -35,5 +36,11 @@ router.get("/today", MatchController.getTodayMatches);
 
 // GET LIVE MATCHES
 router.get("/live", MatchController.getLiveMatches);
+
+// GET TODAY MATCHES BY TOURNAMENT
+router.get("/today/:tournamentId", MatchController.getTodayMatchesByTournament);
+
+// GET LIVE MATCHES BY TOURNAMENT
+router.get("/live/:tournamentId", MatchController.getLiveMatchesByTournament);
 
 export default router;
