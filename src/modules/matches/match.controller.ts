@@ -1,3 +1,4 @@
+
 import { Request, Response } from "express";
 import { ApiResponseBuilder } from "../../common/utils/ApiResponse";
 import { MatchService } from "./match.service";
@@ -150,4 +151,33 @@ export class MatchController {
       .withData(result.data)
       .build(res);
   }
+
+    // GET TODAY MATCHES BY TOURNAMENT
+  static async getTodayMatchesByTournament(req: Request, res: Response) {
+    const { tournamentId } = req.params;
+    const result = await matchService.getTodayMatchesByTournament(tournamentId);
+    if (!result.ok) {
+      return new ApiResponseBuilder().notFound(result.error!).build(res);
+    }
+    return new ApiResponseBuilder()
+      .ok("Today's matches for tournament fetched successfully")
+      .withData(result.data)
+      .build(res);
+  }
+
+  // GET LIVE MATCHES BY TOURNAMENT
+  static async getLiveMatchesByTournament(req: Request, res: Response) {
+    const { tournamentId } = req.params;
+    const result = await matchService.getLiveMatchesByTournament(tournamentId);
+    if (!result.ok) {
+      return new ApiResponseBuilder().notFound(result.error!).build(res);
+    }
+    return new ApiResponseBuilder()
+      .ok("Live matches for tournament fetched successfully")
+      .withData(result.data)
+      .build(res);
+  }
+
 }
+
+

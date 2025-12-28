@@ -262,6 +262,42 @@ export class MatchService {
     }
   }
 
+  async getTodayMatchesByTournament(Id: string) {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const matches = await this.prismaService.match.findMany({
+        where: {
+          AND:[{scheduledDate: {
+            gte: today,
+            lt: tomorrow,
+          }},{tournamentId:Id}]
+         
+        },
+        include: {
+          homeTeam: true,
+          awayTeam: true,
+          tournament: true,
+        },
+        orderBy: { scheduledDate: "asc" },
+      });
+      return {
+        ok: true,
+        data: matches.map((m) => ({
+          ...m,
+          scheduledDate: this.formatDate(m.scheduledDate as unknown as string),
+        })),
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+
   async getTodayMatches() {
     try {
       const today = new Date();
@@ -279,6 +315,38 @@ export class MatchService {
           homeTeam: true,
           awayTeam: true,
           tournament: true,
+        },
+        orderBy: { scheduledDate: "asc" },
+      });
+      return {
+        ok: true,
+        data: matches.map((m) => ({
+          ...m,
+          scheduledDate: this.formatDate(m.scheduledDate as unknown as string),
+        })),
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+
+  async getLiveMatchesByTournament(Id: string) {
+    try {
+      const matches = await this.prismaService.match.findMany({
+        where:{
+          AND:[ 
+            { status: "LIVE" },
+            {tournamentId:Id},
+          ]},
+        include: {
+          homeTeam: true,
+          awayTeam: true,
+          tournament: true,
+          events: true,
+          goalScore: true,
         },
         orderBy: { scheduledDate: "asc" },
       });
