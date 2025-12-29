@@ -1,13 +1,18 @@
+import { error } from "console";
 import { generateTeamKey } from "../../common/utils/utility";
 import { prisma } from "../../config/db.config";
 import { eventBus } from "../../events/event-bus";
 import { REGISTIRATION_KEY } from "../../events/events";
 import { AiService } from "../_AI/ai.service";
 import { TeamInput } from "../_AI/utility/type";
+import { GalleryService } from "../gallery/gallery.service";
 import { NotificationService } from "../notifications/notification.servie";
 import { TeamService } from "../teams/team.service";
 import { TournamentService } from "../tournaments/tournament.service";
 import { GenerateFixtureInput } from "./type";
+import { ImageUsage, MediaOwnerType } from "../../../generated/prisma";
+const gallery = new GalleryService();
+const notificationService = new NotificationService(prisma, gallery);
 export class ManagerServices {
   constructor(
     private prismaService = prisma,
@@ -182,7 +187,102 @@ export class ManagerServices {
       };
     }
   }
-  async createNews(tournamentId: string, content: any) {
+  async createNews(
+    tournamentId: string,
+    managerId: string,
+    content: { content: string; title: string; excerpt: string },
+    banner: Express.Multer.File
+  ) {
     // const res = await this.notificationService.broadCastToTournament;
+    const response = await notificationService.broadCastToTournament(
+      managerId,
+      tournamentId,
+      content,
+      banner
+    );
+    if (!response.ok) {
+      return {
+        ok: false,
+        error: response.error,
+      };
+    }
+    return response;
+  }
+  async tournamentGallery(tournamentId: string) {
+    try {
+      const teams = await this.prismaService.tournamentTeam.findMany({
+        where: { tournamentId },
+        select: {
+          team: {
+            select: {
+              id: true,
+              teamName: true,
+            },
+          },
+        },
+      });
+
+      const teamMap = new Map(teams.map((t) => [t.team.id, t.team.teamName]));
+
+      const teamIds = teams.map((t) => t.team.id);
+
+      const gallery = await this.prismaService.mediaGallery.findMany({
+        where: {
+          OR: [
+            { ownerId: tournamentId, ownerType: "TOURNAMENT" },
+            { ownerId: { in: teamIds }, ownerType: "TEAM" },
+          ],
+        },
+        select: {
+          id: true,
+          ownerId: true,
+          ownerType: true,
+          url: true,
+          usage: true,
+        },
+      });
+
+      return {
+        ok: true,
+        data: gallery.map((item) => ({
+          id: item.id,
+          url: item.url,
+          ownerType: item.ownerType,
+          category: item.usage,
+          teamName:
+            item.ownerType === "TEAM"
+              ? teamMap.get(item.ownerId) ?? null
+              : null,
+        })),
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error,
+      };
+    }
+  }
+  async postGallery(
+    image: Express.Multer.File,
+    ownerId: string,
+    ownerType: MediaOwnerType,
+    usage: ImageUsage
+  ) {
+    const res = await gallery.savePicture(
+      image.buffer,
+      ownerId,
+      ownerType,
+      usage
+    );
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: res.error,
+      };
+    }
+    return {
+      ok: true,
+      message: "photo uploaded",
+    };
   }
 }

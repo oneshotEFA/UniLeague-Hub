@@ -1,4 +1,3 @@
-
 import { Request, Response } from "express";
 import { ApiResponseBuilder } from "../../common/utils/ApiResponse";
 import { MatchService } from "./match.service";
@@ -9,9 +8,9 @@ const matchService = new MatchService(prisma);
 
 export class MatchController {
   // CREATE MATCH
-  static async createMatch(req: Request, res: Response) {
-    const matchData: match = req.body;
-    const result = await matchService.createMatch(matchData);
+  static async createMatches(req: Request, res: Response) {
+    const matchData: match[] = req.body;
+    const result = await matchService.createMatches(matchData);
     if (!result.ok) {
       return new ApiResponseBuilder().notFound(result.error!).build(res);
     }
@@ -152,7 +151,7 @@ export class MatchController {
       .build(res);
   }
 
-    // GET TODAY MATCHES BY TOURNAMENT
+  // GET TODAY MATCHES BY TOURNAMENT
   static async getTodayMatchesByTournament(req: Request, res: Response) {
     const { tournamentId } = req.params;
     const result = await matchService.getTodayMatchesByTournament(tournamentId);
@@ -177,7 +176,15 @@ export class MatchController {
       .withData(result.data)
       .build(res);
   }
-
+  static async createMatch(req: Request, res: Response) {
+    const matchData: match = req.body;
+    const result = await matchService.createMatch(matchData);
+    if (!result.ok) {
+      return new ApiResponseBuilder().notFound(result.error!).build(res);
+    }
+    return new ApiResponseBuilder()
+      .created("Match created successfully")
+      .withData(result.data)
+      .build(res);
+  }
 }
-
-
