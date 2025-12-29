@@ -16,6 +16,8 @@ route.post(
 route.delete("/team/delete/:id", teamControl.removeTeam);
 
 //matches
+route.post("/matches/create", MatchController.createMatches); // multiple creation
+route.post("/match/create", MatchController.createMatch); // single creation
 route.post("/generate/fixture", ManagerController.generateFixture);
 route.get("/matches/:id/tournament", MatchController.getMatches);
 route.post("/match/event/create", MatchEventController.addEvent);
@@ -29,5 +31,20 @@ route.post(
   "/player/create",
   upload.single("playerPhoto"),
   PlayerControl.createPlayer
+);
+
+//gallery
+route.get("/gallery/:id/tournament", ManagerController.getGalleryOfTournament);
+route.post(
+  "/gallery/post",
+  upload.single("banner"),
+  ManagerController.postToGallery
+);
+
+//news
+route.post(
+  "/news/create",
+  upload.single("banner"),
+  ManagerController.postNewsToTournament
 );
 export default route;
