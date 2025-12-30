@@ -38,4 +38,32 @@ export class AuthController {
       .withData(result.data)
       .build(res);
   }
+  static async updateUser(req: Request, res: Response) {
+    const { id, data } = req.body;
+
+    const result = await authService.updateUser(id, data);
+
+    if (!result.ok) {
+      return new ApiResponseBuilder().badRequest(result.error).build(res);
+    }
+
+    return new ApiResponseBuilder()
+      .created("updated")
+      .withData(result.data)
+      .build(res);
+  }
+  static async getMe(req: Request, res: Response) {
+    const { id } = req.params;
+
+    const result = await authService.getMe(id);
+
+    if (!result.ok) {
+      return new ApiResponseBuilder().badRequest(result.error).build(res);
+    }
+
+    return new ApiResponseBuilder()
+      .created("get em")
+      .withData(result.data)
+      .build(res);
+  }
 }

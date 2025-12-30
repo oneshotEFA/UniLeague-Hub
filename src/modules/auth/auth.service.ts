@@ -111,4 +111,93 @@ export class AuthService {
       };
     }
   }
+  async updateUser(
+    adminId: string,
+    payload: {
+      email?: string;
+      username?: string;
+      fullName?: string;
+    }
+  ) {
+    if (!adminId) {
+      return { ok: false, error: "Admin ID is required" };
+    }
+    const data: Record<string, string> = {};
+    if (payload.email?.trim()) {
+      data.email = payload.email.trim().toLowerCase();
+    }
+    if (payload.username?.trim()) {
+      data.username = payload.username.trim();
+    }
+    if (payload.fullName?.trim()) {
+      data.fullName = payload.fullName.trim();
+    }
+    if (Object.keys(data).length === 0) {
+      return { ok: false, error: "No valid fields to update" };
+    }
+
+    try {
+      const updatedAdmin = await this.prismaService.admin.update({
+        where: { id: adminId },
+        data,
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          fullName: true,
+        },
+      });
+
+      return {
+        ok: true,
+        data: updatedAdmin,
+      };
+    } catch (error: any) {
+      if (error.code === "P2002") {
+        return {
+          ok: false,
+          error: "Email or username already in use",
+        };
+      }
+      return {
+        ok: false,
+        error: error.message,
+      };
+    }
+  }
+  async getMe(id: string) {
+    try {
+      const res = await this.prismaService.admin.findUnique({
+        where: { id: id },
+        select: {
+          id: true,
+          username: true,
+          fullName: true,
+          email: true,
+          tournaments: { select: { tournamentName: true } },
+        },
+      });
+      if (!res) {
+        return {
+          ok: false,
+          message: "no user found",
+        };
+      }
+      return {
+        ok: true,
+        data: res,
+      };
+    } catch (error: any) {
+      if (error.code === "P2002") {
+        return {
+          ok: false,
+          error: "Email or username already in use",
+        };
+      }
+      return {
+        ok: false,
+        error: error.message,
+      };
+    }
+  }
 }
