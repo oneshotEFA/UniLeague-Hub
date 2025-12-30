@@ -111,6 +111,21 @@ export class TournamentController {
       .build(res);
   }
 
+  // dash board status 
+  static async dashBoardStatus(req: Request, res: Response){
+    const result = await tournamentService.getDashboardStats()
+    if (!result.ok) {
+      return new ApiResponseBuilder().notFound("result?.error").build(res);
+    }
+
+    return new ApiResponseBuilder()
+      .ok("DashBord status fetched")
+      .withData(result.data)
+      .build(res);
+  }
+
+
+
   // GET TOURNAMENT SUMMARY
   // static async getTournamentSummary(req: Request, res: Response) {
   //   const { tournamentId } = req.params;
