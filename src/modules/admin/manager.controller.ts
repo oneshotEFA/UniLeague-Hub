@@ -157,4 +157,44 @@ export class ManagerController {
         .build(res);
     }
   }
+  static async directMessage(req: Request, res: Response) {
+    try {
+      const { senderId, message } = req.body;
+
+      const result = await managerService.directMessage(senderId, message);
+
+      if (!result.ok) {
+        return new ApiResponseBuilder().badRequest(result.error).build(res);
+      }
+      return new ApiResponseBuilder().ok("sent").build(res);
+    } catch (error) {
+      console.error(error);
+      return new ApiResponseBuilder()
+        .internalError("Internal server error")
+        .build(res);
+    }
+  }
+  static async getDirectMessages(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      console.log(id);
+      const result = await managerService.getDirectMessage(id);
+
+      if (!result.ok) {
+        return new ApiResponseBuilder()
+          .badRequest("no result from the api")
+          .build(res);
+      }
+
+      return new ApiResponseBuilder()
+        .ok(result.error)
+        .withData(result.data)
+        .build(res);
+    } catch (error) {
+      console.error(error);
+      return new ApiResponseBuilder()
+        .internalError("Internal server error")
+        .build(res);
+    }
+  }
 }

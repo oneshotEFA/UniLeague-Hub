@@ -16,18 +16,26 @@ export class AuthController {
     );
 
     if (!result.ok) {
-      return res
-        .status(400)
-        .json(new ApiResponseBuilder().badRequest(result.error).build(res));
+      return new ApiResponseBuilder().badRequest(result.error).build(res);
     }
 
-    return res
-      .status(201)
-      .json(
-        new ApiResponseBuilder()
-          .created("User created")
-          .withData(result.data)
-          .build(res)
-      );
+    return new ApiResponseBuilder()
+      .created("User created")
+      .withData(result.data)
+      .build(res);
+  }
+  static async login(req: Request, res: Response) {
+    const { username, password } = req.body;
+
+    const result = await authService.login(username, password);
+
+    if (!result.ok) {
+      return new ApiResponseBuilder().badRequest(result.error).build(res);
+    }
+
+    return new ApiResponseBuilder()
+      .created("login successful")
+      .withData(result.data)
+      .build(res);
   }
 }

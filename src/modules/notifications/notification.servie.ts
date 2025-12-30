@@ -19,7 +19,6 @@ export class NotificationService {
   // send notification
   async sendNotification(
     senderAdminId: string,
-    type: NotificationType,
     message: string,
     reciveradminId: string
   ) {
@@ -31,18 +30,14 @@ export class NotificationService {
         };
       }
 
-      if (!type) {
-        return {
-          ok: false,
-          error: "type of the content must be defined",
-        };
-      }
-
       if (!message) {
         return {
           ok: false,
           error: "message must be there",
         };
+      }
+      if (!reciveradminId) {
+        return { ok: false, error: "receiver admin id is required" };
       }
 
       const notification = await this.prismaService.notification.create({
@@ -52,6 +47,7 @@ export class NotificationService {
           senderAdminId,
           receiverAdminId: reciveradminId,
         },
+        select: { id: true },
       });
 
       return {
@@ -203,7 +199,8 @@ export class NotificationService {
       }
       const notfication = await this.prismaService.notification.findMany({
         where: {
-          receiverAdminId: adminId,
+          OR: [{ receiverAdminId: adminId }, { senderAdminId: adminId }],
+          type: NotificationType.DIRECT_MESSAGE,
         },
         orderBy: {
           createdAt: "desc",

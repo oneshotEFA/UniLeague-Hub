@@ -47,4 +47,6 @@ route.post(
   upload.single("banner"),
   ManagerController.postNewsToTournament
 );
+route.post("/message/send", ManagerController.directMessage);
+route.get("/message/read/:id", ManagerController.getDirectMessages);
 export default route;

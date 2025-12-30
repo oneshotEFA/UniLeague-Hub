@@ -51,6 +51,11 @@ export class AuthService {
     try {
       const user = await this.prismaService.admin.findUnique({
         where: { username },
+        include: {
+          tournaments: {
+            select: { id: true },
+          },
+        },
       });
 
       if (!user) {
@@ -66,6 +71,7 @@ export class AuthService {
         id: user.id,
         username: user.username,
         role: user.role,
+        tid: user.tournaments[0].id,
       };
 
       const token = jwt.sign(accessPayload, process.env.ACCESS_SECRET!, {
@@ -91,9 +97,11 @@ export class AuthService {
         ok: true,
         data: {
           id: user.id,
-          username: user.username,
-          token,
-          refreshToken, // client needs this
+          uName: user.username,
+          aToken: token,
+          rToken: refreshToken,
+          tid: accessPayload.tid,
+          role: user.role, // client needs this
         },
       };
     } catch (error) {
