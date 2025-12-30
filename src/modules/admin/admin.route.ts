@@ -8,7 +8,7 @@ adminRouter.get("/admins", AdminControl.getAllAdmin);
 // Get tournament managers
 adminRouter.get("/managers", AdminControl.getTournamentManagers);
 
-adminRouter.post("/create", AdminControl.createTournament);
+adminRouter.post("/create",upload.single("logo"), AdminControl.createTournament);
 adminRouter.put("/tournament", AdminControl.updateTournament);
 // Delete tournament
 adminRouter.delete("/tournament/:id", AdminControl.deleteTournament);

@@ -3,8 +3,8 @@ import { TournamentStatus as Status } from "../../../generated/prisma";
 export interface tournament {
   managerId: string;
   tournamentName: string;
-  startingDate: string;
-  endingDate: string;
+  startingDate: Date;
+  endingDate: Date;
   description: string;
   venue: string;
   sponsor?: string;

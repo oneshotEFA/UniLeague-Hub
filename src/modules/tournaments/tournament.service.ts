@@ -65,23 +65,22 @@ export class TournamentService {
       );
 
       const teamCount = await this.prismaService.tournamentTeam.count({
-          where: { tournamentId: id },
-        });
+        where: { tournamentId: id },
+      });
 
-        const playerCount = await this.prismaService.player.count({
-          where: {
-            team: {
-              tournaments: {
-                some: { tournamentId: id },
-              },
+      const playerCount = await this.prismaService.player.count({
+        where: {
+          team: {
+            tournaments: {
+              some: { tournamentId: id },
             },
           },
-        });
+        },
+      });
 
-    
       return {
         ok: true,
-        data: { ...res, logoUrl: data[0]?.url, teamCount, playerCount},
+        data: { ...res, logoUrl: data[0]?.url, teamCount, playerCount },
       };
     } catch (error) {
       return {
@@ -93,8 +92,9 @@ export class TournamentService {
 
   async createTournament(data: tournament) {
     try {
+      const { logo, ...tournamentData } = data;
       const res = await this.prismaService.tournament.create({
-        data,
+        data: tournamentData,
         select: {
           id: true,
           tournamentName: true,
@@ -104,7 +104,7 @@ export class TournamentService {
           manager: { select: { fullName: true } },
         },
       });
-      const logo = await this.galleryService.savePicture(
+      const logos = await this.galleryService.savePicture(
         data.logo.buffer,
         res.id,
         'TOURNAMENT',
@@ -118,7 +118,7 @@ export class TournamentService {
         organizer: res.sponsor,
         extraInfo: res.description,
       });
-      if (!logo.ok) message = 'Tournament created but logo upload failed';
+      if (!logos.ok) message = 'Tournament created but logo upload failed';
 
       return {
         ok: true,
