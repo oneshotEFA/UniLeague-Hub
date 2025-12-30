@@ -8,9 +8,9 @@ const matchService = new MatchService(prisma);
 
 export class MatchController {
   // CREATE MATCH
-  static async createMatch(req: Request, res: Response) {
-    const matchData: match = req.body;
-    const result = await matchService.createMatch(matchData);
+  static async createMatches(req: Request, res: Response) {
+    const matchData: match[] = req.body;
+    const result = await matchService.createMatches(matchData);
     if (!result.ok) {
       return new ApiResponseBuilder().notFound(result.error!).build(res);
     }
@@ -140,12 +140,50 @@ export class MatchController {
 
   // GET ALL MATCHES
   static async getMatches(req: Request, res: Response) {
-    const result = await matchService.getMatches();
+    const { id } = req.params;
+    const result = await matchService.getMatches(id);
     if (!result.ok) {
       return new ApiResponseBuilder().notFound(result.error!).build(res);
     }
     return new ApiResponseBuilder()
       .ok("Matches fetched successfully")
+      .withData(result.data)
+      .build(res);
+  }
+
+  // GET TODAY MATCHES BY TOURNAMENT
+  static async getTodayMatchesByTournament(req: Request, res: Response) {
+    const { tournamentId } = req.params;
+    const result = await matchService.getTodayMatchesByTournament(tournamentId);
+    if (!result.ok) {
+      return new ApiResponseBuilder().notFound(result.error!).build(res);
+    }
+    return new ApiResponseBuilder()
+      .ok("Today's matches for tournament fetched successfully")
+      .withData(result.data)
+      .build(res);
+  }
+
+  // GET LIVE MATCHES BY TOURNAMENT
+  static async getLiveMatchesByTournament(req: Request, res: Response) {
+    const { tournamentId } = req.params;
+    const result = await matchService.getLiveMatchesByTournament(tournamentId);
+    if (!result.ok) {
+      return new ApiResponseBuilder().notFound(result.error!).build(res);
+    }
+    return new ApiResponseBuilder()
+      .ok("Live matches for tournament fetched successfully")
+      .withData(result.data)
+      .build(res);
+  }
+  static async createMatch(req: Request, res: Response) {
+    const matchData: match = req.body;
+    const result = await matchService.createMatch(matchData);
+    if (!result.ok) {
+      return new ApiResponseBuilder().notFound(result.error!).build(res);
+    }
+    return new ApiResponseBuilder()
+      .created("Match created successfully")
       .withData(result.data)
       .build(res);
   }

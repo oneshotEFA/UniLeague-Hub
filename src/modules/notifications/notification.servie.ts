@@ -2,6 +2,15 @@ import { AdminRole, NotificationType } from "../../../generated/prisma";
 import { prisma } from "../../config/db.config";
 import { GalleryService } from "../gallery/gallery.service";
 import transporter from "../../config/mail.config";
+
+interface NewsContent {
+  type?: string;
+  message?: string;
+  title?: string;
+  body?: string;
+  category?: string;
+  image?: Express.Multer.File;
+}
 export class NotificationService {
   constructor(
     private prismaService = prisma,
@@ -10,8 +19,7 @@ export class NotificationService {
   // send notification
   async sendNotification(
     senderAdminId: string,
-    type: NotificationType,
-
+    message: string,
     reciveradminId: string
   ) {
     try {
@@ -22,20 +30,24 @@ export class NotificationService {
         };
       }
 
-      if (!type) {
+      if (!message) {
         return {
           ok: false,
-          error: "type of the content must be defined",
+          error: "message must be there",
         };
+      }
+      if (!reciveradminId) {
+        return { ok: false, error: "receiver admin id is required" };
       }
 
       const notification = await this.prismaService.notification.create({
         data: {
           type: NotificationType.DIRECT_MESSAGE,
-
+          message: message,
           senderAdminId,
           receiverAdminId: reciveradminId,
         },
+        select: { id: true },
       });
 
       return {
@@ -113,10 +125,9 @@ export class NotificationService {
     senderAdminId: string,
     tournamentId: string,
     content: {
-      type: string;
-      message: string;
+      content: string;
       title: string;
-      critical: "critical" | "serious" | "warning" | "error";
+      excerpt: string;
     },
     photo?: Express.Multer.File
   ) {
@@ -188,7 +199,8 @@ export class NotificationService {
       }
       const notfication = await this.prismaService.notification.findMany({
         where: {
-          receiverAdminId: adminId,
+          OR: [{ receiverAdminId: adminId }, { senderAdminId: adminId }],
+          type: NotificationType.DIRECT_MESSAGE,
         },
         orderBy: {
           createdAt: "desc",
@@ -215,19 +227,11 @@ export class NotificationService {
   }
 
   //get broadcast notifications
-  async getBroadCastNotification(adminId: string) {
+  async getBroadCastNotification() {
     try {
-      if (!adminId) {
-        return {
-          ok: false,
-          error: " admin id is must ",
-        };
-      }
-
       const getNotification = await this.prismaService.notification.findMany({
         where: {
           type: NotificationType.BROADCAST,
-          receiverAdminId: adminId,
         },
         orderBy: {
           createdAt: "desc",
@@ -291,16 +295,90 @@ export class NotificationService {
     }
   }
 
+  // delete News
+  async deleteBroadCast(notifcationId: string) {
+    try {
+      if (!notifcationId) {
+        return {
+          ok: false,
+          error: "notification id requierd ",
+        };
+      }
+      const notfication = await this.prismaService.notification.findUnique({
+        where: { id: notifcationId },
+      });
+      if (!notfication) {
+        return {
+          ok: false,
+          error: "there is no any notificaion with this id",
+        };
+      }
+      const deleteNotificaion = await this.prismaService.notification.delete({
+        where: { id: notifcationId },
+      });
+      return {
+        ok: true,
+        data: deleteNotificaion,
+      };
+    } catch (error: any) {
+      return {
+        ok: false,
+        error: error.message,
+      };
+    }
+  }
+
+  // update news
+  async updateBroadCast(notificationId: string, content: NewsContent) {
+    try {
+      if (!notificationId) {
+        return { ok: false, error: "notification id is required" };
+      }
+
+      const notification = await this.prismaService.notification.findUnique({
+        where: { id: notificationId },
+      });
+
+      if (!notification) {
+        return { ok: false, error: "No notification found with this id" };
+      }
+
+      const oldMeta =
+        typeof notification.meta === "object" && notification.meta !== null
+          ? (notification.meta as Record<string, any>)
+          : {};
+
+      const updatedMeta = {
+        ...oldMeta,
+        message: content.message ?? oldMeta.message,
+        title: content.title ?? oldMeta.title,
+        body: content.body ?? oldMeta.body,
+        category: content.category ?? oldMeta.category,
+        image: content.image ?? oldMeta.image,
+      };
+
+      const updatedNotification = await this.prismaService.notification.update({
+        where: { id: notificationId },
+        data: {
+          type: (content.type as any) ?? notification.type,
+          meta: updatedMeta,
+        },
+      });
+
+      return { ok: true, data: updatedNotification };
+    } catch (error: any) {
+      return { ok: false, error: error.message };
+    }
+  }
+
   // broadcast to the web
   async broadCastToWeb(
     content: {
       type: string;
-      message: string;
       title: string;
-      body: string;
-      category: string;
+      content: string;
     },
-    image: Express.Multer.File
+    image?: Express.Multer.File
   ) {
     try {
       if (!content) {
@@ -315,32 +393,23 @@ export class NotificationService {
           type: NotificationType.BROADCAST,
           meta: {
             type: content.type,
-            message: content.message,
             title: content.title,
-            body: content.body,
-            categores: content.category,
-            image: null,
+            contetn: content.content,
           },
         },
       });
-      const post = await this.galleryService.savePicture(
-        image.buffer,
-        broadCast.id,
-        "WEB",
-        "COVER",
-        true
-      );
-      const updated = await this.prismaService.notification.update({
-        where: { id: broadCast.id },
-        data: {
-          meta: {
-            image: post.data?.url,
-          },
-        },
-      });
+      if (image?.buffer) {
+        const post = await this.galleryService.savePicture(
+          image.buffer,
+          broadCast.id,
+          "WEB",
+          "COVER",
+          true
+        );
+      }
       return {
         ok: true,
-        data: updated,
+        data: broadCast,
       };
     } catch (error: any) {
       return {
@@ -430,10 +499,7 @@ export class NotificationService {
   }
 
   //send email
-  private async sendMaintenanceEmail(
-    notifcationId: string,
-    maintenanceEmail: string
-  ) {
+  async sendMaintenanceEmail(notifcationId: string, maintenanceEmail: string) {
     try {
       const notifcation = await this.prismaService.notification.findUnique({
         where: { id: notifcationId },
@@ -455,10 +521,8 @@ export class NotificationService {
       const type = meta.type;
       const categores = meta.categores;
       const severity = meta.severity;
-      const subject = meta.subject;
+      const subject = "maintence issue";
       const messageDeveloper = meta.messageDeveloper;
-      const title = meta.title;
-
       const htmlContent = `
     <html>
       <head>
@@ -499,7 +563,7 @@ export class NotificationService {
       </head>
       <body>
         <div class="container">
-          <h1>${title}</h1>
+          <h1>maintence help</h1>
 
           <ul>
             <li><strong>Type:</strong> ${type}</li>

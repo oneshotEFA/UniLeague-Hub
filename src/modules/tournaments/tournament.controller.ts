@@ -96,6 +96,35 @@ export class TournamentController {
       .withData(result.data)
       .build(res);
   }
+  static async getPlayersByTournament(req: Request, res: Response) {
+    const { tournamentId } = req.params;
+
+    const result = await tournamentService.getPlayersByTournament(tournamentId);
+
+    if (!result.ok) {
+      return new ApiResponseBuilder().notFound("result?.error").build(res);
+    }
+
+    return new ApiResponseBuilder()
+      .ok("players fethed")
+      .withData(result.data)
+      .build(res);
+  }
+
+  // dash board status 
+  static async dashBoardStatus(req: Request, res: Response){
+    const result = await tournamentService.getDashboardStats()
+    if (!result.ok) {
+      return new ApiResponseBuilder().notFound("result?.error").build(res);
+    }
+
+    return new ApiResponseBuilder()
+      .ok("DashBord status fetched")
+      .withData(result.data)
+      .build(res);
+  }
+
+
 
   // GET TOURNAMENT SUMMARY
   // static async getTournamentSummary(req: Request, res: Response) {

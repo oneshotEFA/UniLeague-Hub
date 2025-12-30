@@ -1,4 +1,6 @@
 import { prisma } from "../../config/db.config";
+import { eventBus } from "../../events/event-bus";
+import { TRANSFER_NEWS } from "../../events/events";
 import { GalleryService } from "../gallery/gallery.service";
 import { handleRedCard, handleYellowCard } from "./utility";
 
@@ -392,7 +394,13 @@ export class PlayerService {
 
   // player transfer
 
-  async playerTransfer(playerId: string, newTeamId: string, newNumber: number) {
+  async playerTransfer(
+    playerId: string,
+    newTeamId: string,
+    newNumber: number,
+    tournamentId: string,
+    managerId: string
+  ) {
     try {
       if (!playerId || !newTeamId || newNumber < 0) {
         return {
@@ -403,6 +411,7 @@ export class PlayerService {
 
       const checkPlayer = await this.prismaService.player.findUnique({
         where: { id: playerId },
+        include: { team: { select: { teamName: true } } },
       });
       if (!checkPlayer) {
         return {
@@ -448,7 +457,14 @@ export class PlayerService {
           number: newNumber,
         },
       });
-
+      eventBus.emit(TRANSFER_NEWS, {
+        playerName: checkPlayer.name,
+        fromTeam: checkPlayer.team.teamName,
+        toTeam: checkTeam.teamName,
+        position: checkPlayer.position,
+        tournamentId,
+        managerId,
+      });
       return {
         ok: true,
         data: transferPlayer,

@@ -33,23 +33,21 @@ export class MatchService {
     }
   }
 
-  async createMatch(data: match) {
+  async createMatches(data: match[]) {
     try {
-      const matchData = await this.prismaService.match.create({
-        data: {
-          ...data,
+      const matchData = await this.prismaService.match.createMany({
+        data: data.map((m) => ({
+          ...m,
+          scheduledDate: new Date(m.scheduledDate), // VERY IMPORTANT
           status: "SCHEDULED",
           homeScore: 0,
           awayScore: 0,
-        },
+        })),
       });
       return {
         ok: true,
         data: {
           ...matchData,
-          scheduledDate: this.formatDate(
-            matchData.scheduledDate as unknown as string
-          ),
         },
       };
     } catch (error) {
@@ -175,10 +173,15 @@ export class MatchService {
           homeTeam: true,
           awayTeam: true,
           tournament: true,
-          events: true,
-          goalScore: true,
-          playerMatchStats: true,
-          matchStats: true,
+          events: {
+            select: {
+              id: true,
+              eventType: true,
+              minute: true,
+              team: { select: { teamName: true } },
+              player: { select: { name: true } },
+            },
+          },
         },
       });
       if (!match) {
@@ -257,6 +260,46 @@ export class MatchService {
     }
   }
 
+  async getTodayMatchesByTournament(Id: string) {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const matches = await this.prismaService.match.findMany({
+        where: {
+          AND: [
+            {
+              scheduledDate: {
+                gte: today,
+                lt: tomorrow,
+              },
+            },
+            { tournamentId: Id },
+          ],
+        },
+        include: {
+          homeTeam: true,
+          awayTeam: true,
+          tournament: true,
+        },
+        orderBy: { scheduledDate: "asc" },
+      });
+      return {
+        ok: true,
+        data: matches.map((m) => ({
+          ...m,
+          scheduledDate: this.formatDate(m.scheduledDate as unknown as string),
+        })),
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+
   async getTodayMatches() {
     try {
       const today = new Date();
@@ -274,6 +317,36 @@ export class MatchService {
           homeTeam: true,
           awayTeam: true,
           tournament: true,
+        },
+        orderBy: { scheduledDate: "asc" },
+      });
+      return {
+        ok: true,
+        data: matches.map((m) => ({
+          ...m,
+          scheduledDate: this.formatDate(m.scheduledDate as unknown as string),
+        })),
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+
+  async getLiveMatchesByTournament(Id: string) {
+    try {
+      const matches = await this.prismaService.match.findMany({
+        where: {
+          AND: [{ status: "LIVE" }, { tournamentId: Id }],
+        },
+        include: {
+          homeTeam: true,
+          awayTeam: true,
+          tournament: true,
+          events: true,
+          goalScore: true,
         },
         orderBy: { scheduledDate: "asc" },
       });
@@ -320,9 +393,10 @@ export class MatchService {
     }
   }
 
-  async getMatches() {
+  async getMatches(id: string) {
     try {
       const matches = await this.prismaService.match.findMany({
+        where: { tournamentId: id },
         include: {
           homeTeam: true,
           awayTeam: true,
@@ -336,6 +410,32 @@ export class MatchService {
           ...m,
           scheduledDate: this.formatDate(m.scheduledDate as unknown as string),
         })),
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+  async createMatch(data: match) {
+    try {
+      const matchData = await this.prismaService.match.create({
+        data: {
+          ...data,
+          status: "SCHEDULED",
+          homeScore: 0,
+          awayScore: 0,
+        },
+      });
+      return {
+        ok: true,
+        data: {
+          ...matchData,
+          scheduledDate: this.formatDate(
+            matchData.scheduledDate as unknown as string
+          ),
+        },
       };
     } catch (error) {
       return {

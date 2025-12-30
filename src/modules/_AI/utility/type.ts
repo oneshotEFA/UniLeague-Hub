@@ -5,6 +5,8 @@ export interface MatchWeek {
 export interface Match {
   homeTeamId: string;
   awayTeamId: string;
+  homeTeamName: string;
+  awayTeamName: string;
   group?: string;
   date?: string;
 }
@@ -54,15 +56,15 @@ export interface GroupStageInput {
   daysBetweenWeeks: number;
 }
 
-export interface KnockoutInput {
-  qualifiedTeams: TeamInput[];
-  matchRules: {
-    useHomeAwayLegs: boolean;
-    finalIsSingleMatch: boolean;
-  };
-  startDate: string;
-  daysBetweenRounds: number;
-}
+// export interface KnockoutInput {
+//   qualifiedTeams: TeamInput[];
+//   matchRules: {
+//     useHomeAwayLegs: boolean;
+//     finalIsSingleMatch: boolean;
+//   };
+//   startDate: string;
+//   daysBetweenRounds: number;
+// }
 
 export type PosterInput = {
   homeTeam: string;

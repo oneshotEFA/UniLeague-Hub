@@ -8,7 +8,12 @@ export class TeamService {
   ) {}
 
   // upload image(logo) to the cloudinary cloud create team
-  async createTeam(teamName: string, logo: Express.Multer.File) {
+  async createTeam(
+    teamName: string,
+    coachName: string,
+    coachEmail: string,
+    logo: Express.Multer.File
+  ) {
     try {
       if (!teamName || !logo) {
         return {
@@ -29,6 +34,8 @@ export class TeamService {
       const team = await this.PrismaService.team.create({
         data: {
           teamName,
+          coachEmail,
+          coachName,
         },
       });
 

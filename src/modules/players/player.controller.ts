@@ -38,7 +38,7 @@ export class PlayerControl {
 
   // Get all players
   static async getPlayers(req: Request, res: Response) {
-    const { teamId } = req.query;
+    const { teamId } = req.params;
     const values = await playerService.getPlayers(teamId as string);
 
     if (!values.ok) {
@@ -98,7 +98,8 @@ export class PlayerControl {
       );
   }
   static async transferPlayer(req: Request, res: Response) {
-    const { playerId, newTeamId, newNumber } = req.body;
+    const { playerId, newTeamId, newNumber, managerId, tournamentId } =
+      req.body;
 
     if (!playerId || !newTeamId || typeof newNumber !== "number") {
       return res
@@ -113,7 +114,9 @@ export class PlayerControl {
     const result = await playerService.playerTransfer(
       playerId,
       newTeamId,
-      newNumber
+      newNumber,
+      tournamentId,
+      managerId
     );
 
     if (!result.ok) {
@@ -130,5 +133,17 @@ export class PlayerControl {
           .withData(result.data)
           .build(res)
       );
+  }
+  static async deletePlayer(req: Request, res: Response) {
+    const { id } = req.params;
+
+    const playerName = await playerService.deletePlayer(id);
+    if (!playerName.ok) {
+      return new ApiResponseBuilder().notFound(playerName.error).build(res);
+    }
+    return new ApiResponseBuilder()
+      .created("player deleted")
+      .withData(playerName.data)
+      .build(res);
   }
 }

@@ -10,10 +10,15 @@ const teamService = new TeamService(prisma, gallery);
 export class teamControl {
   // create a team
   static async createTeam(req: Request, res: Response) {
-    const { teamName } = req.body;
+    const { teamName, coachEmail, coachName } = req.body;
     const logo = req.file;
 
-    const value = await teamService.createTeam(teamName, logo!);
+    const value = await teamService.createTeam(
+      teamName,
+      coachEmail,
+      coachName,
+      logo!
+    );
 
     if (!value.ok) {
       return res

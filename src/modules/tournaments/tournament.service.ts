@@ -1,13 +1,13 @@
-import { prisma } from "../../config/db.config";
+import { prisma } from '../../config/db.config';
 import {
   fixtureMatchesType,
   parseSeason,
   tournament,
   UpdateTournament,
-} from "./utility";
-import { eventBus } from "../../events/event-bus";
-import { TOURNAMENT_ANNOUNCEMENT } from "../../events/events";
-import { GalleryService } from "../gallery/gallery.service";
+} from './utility';
+import { eventBus } from '../../events/event-bus';
+import { TOURNAMENT_ANNOUNCEMENT } from '../../events/events';
+import { GalleryService } from '../gallery/gallery.service';
 
 export class TournamentService {
   constructor(
@@ -21,18 +21,18 @@ export class TournamentService {
       if (!res || res.length === 0) {
         return {
           ok: false,
-          error: "No tournaments found in this calendar year",
+          error: 'No tournaments found in this calendar year',
         };
       }
       const data = await Promise.all(
-        res.map(async (tournament) => {
+        res.map(async tournament => {
           const logo = await this.galleryService.getImagesByOwner(
-            "TOURNAMENT",
+            'TOURNAMENT',
             tournament.id,
-            "LOGO"
+            'LOGO'
           );
           return {
-            ...res,
+            ...tournament,
             logoUrl: logo[0]?.url,
           };
         })
@@ -45,7 +45,7 @@ export class TournamentService {
     } catch (error) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -57,29 +57,44 @@ export class TournamentService {
       if (!res) {
         return {
           ok: false,
-          error: "smtg went wrong",
+          error: 'smtg went wrong',
         };
       }
       const data = await Promise.all(
-        await this.galleryService.getImagesByOwner("TOURNAMENT", res.id, "LOGO")
+        await this.galleryService.getImagesByOwner('TOURNAMENT', res.id, 'LOGO')
       );
+
+      const teamCount = await this.prismaService.tournamentTeam.count({
+        where: { tournamentId: id },
+      });
+
+      const playerCount = await this.prismaService.player.count({
+        where: {
+          team: {
+            tournaments: {
+              some: { tournamentId: id },
+            },
+          },
+        },
+      });
 
       return {
         ok: true,
-        data: { ...res, logoUrl: data[0]?.url },
+        data: { ...res, logoUrl: data[0]?.url, teamCount, playerCount },
       };
     } catch (error) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
 
   async createTournament(data: tournament) {
     try {
+      const { logo, ...tournamentData } = data;
       const res = await this.prismaService.tournament.create({
-        data,
+        data: tournamentData,
         select: {
           id: true,
           tournamentName: true,
@@ -89,21 +104,21 @@ export class TournamentService {
           manager: { select: { fullName: true } },
         },
       });
-      const logo = await this.galleryService.savePicture(
+      const logos = await this.galleryService.savePicture(
         data.logo.buffer,
         res.id,
-        "TOURNAMENT",
-        "LOGO",
+        'TOURNAMENT',
+        'LOGO',
         true
       );
-      let message = "Tournament created successfully";
+      let message = 'Tournament created successfully';
       eventBus.emit(TOURNAMENT_ANNOUNCEMENT, {
         name: res.tournamentName,
         startDate: res.startingDate,
         organizer: res.sponsor,
         extraInfo: res.description,
       });
-      if (!logo.ok) message = "Tournament created but logo upload failed";
+      if (!logos.ok) message = 'Tournament created but logo upload failed';
 
       return {
         ok: true,
@@ -113,7 +128,7 @@ export class TournamentService {
     } catch (error) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -122,7 +137,7 @@ export class TournamentService {
     try {
       const res = await this.prismaService.tournament.delete({ where: { id } });
       const logo = await this.prismaService.mediaGallery.findFirst({
-        where: { ownerId: id, ownerType: "TOURNAMENT", usage: "LOGO" },
+        where: { ownerId: id, ownerType: 'TOURNAMENT', usage: 'LOGO' },
         select: { publicId: true },
       });
       if (!logo?.publicId) return { ok: true, data: res };
@@ -134,7 +149,7 @@ export class TournamentService {
     } catch (error) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -150,7 +165,7 @@ export class TournamentService {
       if (!existing) {
         return {
           ok: false,
-          error: "Tournament not found",
+          error: 'Tournament not found',
         };
       }
       if (logo) {
@@ -162,8 +177,8 @@ export class TournamentService {
         await this.galleryService.savePicture(
           logo.buffer,
           id,
-          "TOURNAMENT",
-          "LOGO",
+          'TOURNAMENT',
+          'LOGO',
           true
         );
 
@@ -186,7 +201,7 @@ export class TournamentService {
         ) {
           return {
             ok: false,
-            error: "Starting date cannot be after ending date",
+            error: 'Starting date cannot be after ending date',
           };
         }
       }
@@ -203,7 +218,7 @@ export class TournamentService {
     } catch (error) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -216,7 +231,7 @@ export class TournamentService {
       });
 
       if (!tournament) {
-        return { ok: false, message: "Tournament not found", data: null };
+        return { ok: false, message: 'Tournament not found', data: null };
       }
 
       // 2. Validate team
@@ -225,7 +240,7 @@ export class TournamentService {
       });
 
       if (!team) {
-        return { ok: false, message: "Team not found", data: null };
+        return { ok: false, message: 'Team not found', data: null };
       }
 
       // 3. Prevent duplicates
@@ -236,7 +251,7 @@ export class TournamentService {
       if (existing) {
         return {
           ok: false,
-          message: "Team already added to this tournament",
+          message: 'Team already added to this tournament',
           data: null,
         };
       }
@@ -248,12 +263,12 @@ export class TournamentService {
 
       return {
         ok: true,
-        message: "Team successfully added to tournament",
+        message: 'Team successfully added to tournament',
         data: tt,
       };
     } catch (error) {
       console.error(error);
-      return { ok: false, message: "Something went wrong", data: null };
+      return { ok: false, message: 'Something went wrong', data: null };
     }
   }
 
@@ -265,7 +280,7 @@ export class TournamentService {
       });
 
       if (!member) {
-        return { ok: false, message: "Team is not part of this tournament" };
+        return { ok: false, message: 'Team is not part of this tournament' };
       }
 
       const matches = await prisma.match.findFirst({
@@ -279,7 +294,7 @@ export class TournamentService {
         return {
           ok: false,
           message:
-            "Cannot remove team — team already has scheduled or played matches.",
+            'Cannot remove team — team already has scheduled or played matches.',
         };
       }
 
@@ -291,10 +306,10 @@ export class TournamentService {
         where: { id: member.id },
       });
 
-      return { ok: true, message: "Team removed successfully from tournament" };
+      return { ok: true, message: 'Team removed successfully from tournament' };
     } catch (error) {
       console.error(error);
-      return { ok: false, message: "Something went wrong while removing team" };
+      return { ok: false, message: 'Something went wrong while removing team' };
     }
   }
 
@@ -302,27 +317,31 @@ export class TournamentService {
     try {
       const teams = await this.prismaService.tournamentTeam.findMany({
         where: { tournamentId },
-        select: { team: true },
+        select: { team: true, teamId: true, id: true },
       });
-      if (teams.length === 0) {
-        return {
-          ok: false,
-          error: "No team found",
-        };
-      }
       const data = await Promise.all(
-        teams.map(async (team) => {
+        teams.map(async team => {
           const logo = await this.galleryService.getImagesByOwner(
-            "TEAM",
-            team.team.id,
-            "LOGO"
+            'TEAM',
+            team.teamId
           );
+          const count = await this.prismaService.player.count({
+            where: { teamId: team.teamId },
+          });
           return {
-            ...team.team,
-            logoUrl: logo[0]?.url,
+            ...team,
+            playerCount: count,
+            logo,
           };
         })
       );
+      if (teams.length === 0) {
+        return {
+          ok: false,
+          error: 'No team found',
+        };
+      }
+
       return {
         ok: true,
         data,
@@ -330,7 +349,7 @@ export class TournamentService {
     } catch (error) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -343,7 +362,7 @@ export class TournamentService {
       if (teams.length === 0) {
         return {
           ok: false,
-          error: "No team found",
+          error: 'No team found',
         };
       }
       //assuming Ai module give a function to generate fixture like this <|>
@@ -353,12 +372,12 @@ export class TournamentService {
       //return the fixture to admin to view it and match module handle creating the match
       return {
         ok: true,
-        data: "fixtureMatches",
+        data: 'fixtureMatches',
       };
     } catch (error) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -366,12 +385,12 @@ export class TournamentService {
     try {
       const matches = await this.prismaService.match.findMany({
         where: { tournamentId },
-        orderBy: { matchWeek: "asc" },
+        orderBy: { matchWeek: 'asc' },
       });
       if (matches.length === 0) {
         return {
           ok: false,
-          error: "No matches found",
+          error: 'No matches found',
         };
       }
       return {
@@ -381,7 +400,7 @@ export class TournamentService {
     } catch (error) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -402,11 +421,11 @@ export class TournamentService {
         awayScore,
         homeScore
       );
-      return { ok: true, data: "Standings updated" };
+      return { ok: true, data: 'Standings updated' };
     } catch (error) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -415,9 +434,10 @@ export class TournamentService {
     try {
       const standing = await this.prismaService.tournamentStanding.findMany({
         where: { tournamentId },
-        orderBy: { points: "desc" },
+        include: { team: { select: { teamName: true } } },
+        orderBy: { points: 'desc' },
       });
-      if (!standing) return { ok: false, error: "not found" };
+      if (!standing) return { ok: false, error: 'not found' };
       return {
         ok: true,
         data: standing,
@@ -425,7 +445,7 @@ export class TournamentService {
     } catch (error) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -434,16 +454,16 @@ export class TournamentService {
     try {
       await this.prismaService.tournament.update({
         where: { id },
-        data: { status: "COMPLETED" },
+        data: { status: 'COMPLETED' },
       });
       return {
         ok: true,
-        data: "finished",
+        data: 'finished',
       };
     } catch (error) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -457,7 +477,7 @@ export class TournamentService {
     const row = await prisma.tournamentStanding.findFirst({
       where: { tournamentId, teamId },
     });
-    if (!row) throw new Error("Standing row not found");
+    if (!row) throw new Error('Standing row not found');
     const updateData: any = {
       played: row.played + 1,
       goalsFor: row.goalsFor + goalsFor,
@@ -492,7 +512,7 @@ export class TournamentService {
         select: { teamId: true },
       });
       const res = await Promise.all(
-        teams.map(async (team) => {
+        teams.map(async team => {
           try {
             return await this.initStanding(team.teamId, tournamentId);
           } catch (err) {
@@ -500,8 +520,8 @@ export class TournamentService {
           }
         })
       );
-      const success = res.filter((r) => r.ok);
-      const failed = res.filter((r) => !r.ok);
+      const success = res.filter(r => r.ok);
+      const failed = res.filter(r => !r.ok);
       return { ok: true, data: { success, failed } };
     } catch (error) {
       return {
@@ -528,7 +548,7 @@ export class TournamentService {
   }
   async resetTournamentStandings(tournamentId: string) {
     try {
-      return await this.prismaService.$transaction(async (tx) => {
+      return await this.prismaService.$transaction(async tx => {
         // 1. Ensure tournament exists
         const tournament = await tx.tournament.findUnique({
           where: { id: tournamentId },
@@ -536,7 +556,7 @@ export class TournamentService {
         });
 
         if (!tournament) {
-          return { ok: false, error: "Tournament not found" };
+          return { ok: false, error: 'Tournament not found' };
         }
 
         // 2. Get registered teams (IMPORTANT)
@@ -546,7 +566,7 @@ export class TournamentService {
         });
 
         if (teams.length === 0) {
-          return { ok: false, error: "No teams registered in tournament" };
+          return { ok: false, error: 'No teams registered in tournament' };
         }
 
         // 3. Delete existing standings
@@ -556,7 +576,7 @@ export class TournamentService {
 
         // 4. Recreate standings (defaults = 0)
         await tx.tournamentStanding.createMany({
-          data: teams.map((t) => ({
+          data: teams.map(t => ({
             tournamentId,
             teamId: t.teamId,
           })),
@@ -575,6 +595,76 @@ export class TournamentService {
       return {
         ok: false,
         error,
+      };
+    }
+  }
+  async getPlayersByTournament(tournamentId: string) {
+    try {
+      const teams = await this.prismaService.tournamentTeam.findMany({
+        where: { tournamentId },
+        select: {
+          team: {
+            select: {
+              id: true,
+              teamName: true,
+              players: {
+                select: {
+                  id: true,
+                  name: true,
+                  position: true,
+                  number: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return {
+        ok: true,
+        data: teams,
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        message: 'Failed to fetch players',
+      };
+    }
+  }
+
+  // get all tournamets status
+
+  async getDashboardStats() {
+    try {
+      const totalTournaments = await this.prismaService.tournament.count();
+      const activeTournaments = await this.prismaService.tournament.count({
+        where: { status: 'ONGOING' },
+      });
+
+      const finishedTournaments = await this.prismaService.tournament.count({
+        where: { status: 'COMPLETED' },
+      });
+
+      const totalTeams = await this.prismaService.team.count();
+      const totalPlayers = await this.prismaService.player.count();
+
+      const totalManagers = await this.prismaService.admin.count();
+
+      return {
+        ok: true,
+        data: {
+          totalTournaments,
+          activeTournaments,
+          finishedTournaments,
+          totalTeams,
+          totalPlayers,
+          totalManagers,
+        },
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
