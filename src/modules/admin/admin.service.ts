@@ -6,10 +6,8 @@ import { NotificationService } from '../notifications/notification.servie';
 
 interface NewsContent {
   type: string;
-  message: string;
+  content: string;
   title: string;
-  body: string;
-  category: string;
 }
 
 interface UpdateNews {
@@ -95,6 +93,43 @@ export class AdminService {
     }
   }
 
+  // delete admin
+ async deleteAdmin(adminId: string) {
+    try {
+        if (!adminId) {
+            return {
+                ok: false,
+                error: 'Admin ID is required',
+            };
+        }
+
+        const admin = await this.prismaService.admin.findUnique({
+            where: { id: adminId },
+        });
+
+        if (!admin) {
+            return {
+                ok: false,
+                error: 'No admin found with this ID',
+            };
+        }
+
+        await this.prismaService.admin.delete({
+            where: { id: adminId },
+        });
+
+        return {
+            ok: true,
+            message: 'Admin deleted successfully',
+        };
+    } catch (error: any) {
+        return {
+            ok: false,
+            error: error instanceof Error ? error.message : 'An unexpected error occurred',
+        };
+    }
+}
+
   // get the teams in the tournament
   async getTeamsInTournament(tournamentId: string) {
     try {
@@ -167,8 +202,11 @@ export class AdminService {
   // get tournament manager
   async getTournamentManagers() {
     try {
-      const managers = await this.prismaService.tournament.findMany({
-        include: { manager: true },
+      const managers = await this.prismaService.admin.findMany({
+        where: { role: 'tournamentManager' },
+        include: {
+          tournaments: true,
+        },
       });
       return {
         ok: true,
@@ -218,7 +256,7 @@ export class AdminService {
       });
       return {
         ok: true,
-        data: removed,
+        message: "manager removed successfully",
       };
     } catch (error: any) {
       return {
@@ -227,7 +265,6 @@ export class AdminService {
       };
     }
   }
-
 
   // get all admin
   async getAllAdmin() {
@@ -249,32 +286,27 @@ export class AdminService {
     }
   }
 
-  
   // creating news
-  async createNews(content: NewsContent, image: Express.Multer.File) {
+  async createNews(content: NewsContent, image?: Express.Multer.File) {
     try {
-      if (!content.type || !content.title || !content.body) {
+      if (!content.type || !content.title || !content.content) {
         return {
           ok: false,
           error: 'each content is requierd',
-        };
-      }
-      if (!image) {
-        return {
-          ok: false,
-          error: 'image must be there for the news',
         };
       }
       const news = await this.notificationService.broadCastToWeb(
         content,
         image
       );
+
       if (!news.ok) {
         return {
           ok: false,
           error: news.error,
         };
       }
+
       return {
         ok: true,
         data: news,
@@ -286,7 +318,6 @@ export class AdminService {
       };
     }
   }
-
 
   // update news
   async updateNews(newsId: string, content: UpdateNews) {
@@ -319,7 +350,6 @@ export class AdminService {
     }
   }
 
-
   // delete news
   async deleteNews(newsId: string) {
     try {
@@ -350,10 +380,10 @@ export class AdminService {
       };
     }
   }
-  
+
   // get all news
-  async getAllNews(){
-    try{
+  async getAllNews() {
+    try {
       const allNews = await this.notificationService.getBroadCastNotification();
       if (!allNews.ok) {
         return {
@@ -363,19 +393,19 @@ export class AdminService {
       }
       return {
         ok: true,
-        data: allNews.data
-      }
-    } catch (error: any){
+        data: allNews.data,
+      };
+    } catch (error: any) {
       return {
         ok: false,
-        error: error.message
-      }
+        error: error.message,
+      };
     }
   }
 
   // get all system logs
-  async systemLogs(){
-    try{
+  async systemLogs() {
+    try {
       const logs = await this.notificationService.getSystemCalls();
       if (!logs.ok) {
         return {
@@ -383,15 +413,15 @@ export class AdminService {
           error: logs.error,
         };
       }
-      return{
+      return {
         ok: true,
-        data: logs
-      }
-    }catch (error: any){
+        data: logs,
+      };
+    } catch (error: any) {
       return {
         ok: false,
-        error: error.message
-      }
+        error: error.message,
+      };
     }
   }
 }
