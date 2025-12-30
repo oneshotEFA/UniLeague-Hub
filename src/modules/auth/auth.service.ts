@@ -57,7 +57,6 @@ export class AuthService {
           },
         },
       });
-
       if (!user) {
         return { ok: false, error: "Invalid Credential" };
       }
@@ -66,12 +65,12 @@ export class AuthService {
       if (!isPasswordValid) {
         return { ok: false, error: "Invalid Credential" };
       }
-
+      const tid = user.tournaments?.[0]?.id ?? null;
       const accessPayload = {
         id: user.id,
         username: user.username,
         role: user.role,
-        tid: user.tournaments[0].id,
+        tid,
       };
 
       const token = jwt.sign(accessPayload, process.env.ACCESS_SECRET!, {
