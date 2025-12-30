@@ -285,4 +285,52 @@ export class ManagerServices {
       message: "photo uploaded",
     };
   }
+  async directMessage(senderId: string, message: string) {
+    const receiverId = await this.prismaService.admin.findMany({
+      where: { role: "superAdmin" },
+      select: { id: true },
+    });
+    if (receiverId.length === 0) {
+      return {
+        ok: false,
+        message: "no Support found ",
+      };
+    }
+    const res = await notificationService.sendNotification(
+      senderId,
+      message,
+      receiverId[0].id
+    );
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: res.error,
+      };
+    }
+    return {
+      ok: true,
+      message: "sent",
+    };
+  }
+  async getDirectMessage(id: string) {
+    const res = await notificationService.getAdminNotification(id);
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: res.error,
+      };
+    }
+    if (res.data === null) {
+      return {
+        ok: true,
+        data: "no message fund",
+      };
+    }
+    console.log(res.data);
+    return {
+      ok: true,
+      error: res.error,
+      data: res.data,
+    };
+  }
 }
