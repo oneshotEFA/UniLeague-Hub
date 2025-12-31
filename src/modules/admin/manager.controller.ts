@@ -76,7 +76,6 @@ export class ManagerController {
   }
   static async postNewsToTournament(req: Request, res: Response) {
     try {
-      console.log(req.body);
       const { tournamentId, managerId, content } = req.body;
       const banner = req.file;
       if (!banner) {
@@ -190,6 +189,26 @@ export class ManagerController {
         .ok(result.error)
         .withData(result.data)
         .build(res);
+    } catch (error) {
+      console.error(error);
+      return new ApiResponseBuilder()
+        .internalError("Internal server error")
+        .build(res);
+    }
+  }
+  static async deleteNews(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      console.log(id);
+      const result = await managerService.deleteNews(id);
+
+      if (!result.ok) {
+        return new ApiResponseBuilder()
+          .badRequest("no result from the api")
+          .build(res);
+      }
+
+      return new ApiResponseBuilder().ok(result.message).build(res);
     } catch (error) {
       console.error(error);
       return new ApiResponseBuilder()

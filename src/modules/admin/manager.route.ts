@@ -47,6 +47,12 @@ route.post(
   upload.single("banner"),
   ManagerController.postNewsToTournament
 );
+route.post(
+  "/news/create",
+  upload.single("banner"),
+  ManagerController.postNewsToTournament
+);
+route.delete("/news/delete/:id", ManagerController.deleteNews);
 route.post("/message/send", ManagerController.directMessage);
 route.get("/message/read/:id", ManagerController.getDirectMessages);
 export default route;

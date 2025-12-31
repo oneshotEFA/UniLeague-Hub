@@ -152,6 +152,7 @@ export class NotificationService {
           error: "content to notfication is required",
         };
       }
+
       const tournament = await this.prismaService.tournament.findUnique({
         where: { id: tournamentId },
       });
@@ -165,7 +166,8 @@ export class NotificationService {
         data: {
           type: NotificationType.TOURNAMENT_UPDATE,
           senderAdminId,
-          meta: content,
+          meta: typeof content === "string" ? JSON.parse(content) : content,
+
           tournamentId,
         },
       });
