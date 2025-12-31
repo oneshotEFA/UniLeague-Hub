@@ -1,15 +1,23 @@
-import { prisma } from '../../config/db.config';
-import { TournamentService } from '../tournaments/tournament.service';
-import { tournament } from '../tournaments/utility';
-import { UpdateTournament } from '../tournaments/utility';
-import { NotificationService } from '../notifications/notification.servie';
+import { prisma } from "../../config/db.config";
+import { TournamentService } from "../tournaments/tournament.service";
+import { tournament } from "../tournaments/utility";
+import { UpdateTournament } from "../tournaments/utility";
+import { NotificationService } from "../notifications/notification.servie";
+import { AuthService } from "../auth/auth.service";
+import { generatePassword } from "./utility";
 
 interface NewsContent {
   type: string;
   content: string;
   title: string;
 }
-
+type ConversationMeta = {
+  senderId: string;
+  senderName: string;
+  tournamentName: string;
+  lastMessage: string;
+  lastMessageAt: Date;
+};
 interface UpdateNews {
   type?: string;
   message?: string;
@@ -22,7 +30,8 @@ export class AdminService {
   constructor(
     private prismaService = prisma,
     private tournamentService: TournamentService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private authService: AuthService
   ) {}
 
   // create a tournament
@@ -31,7 +40,7 @@ export class AdminService {
       if (!data) {
         return {
           ok: false,
-          error: 'data required',
+          error: "data required",
         };
       }
       const tournament = await this.tournamentService.createTournament(data);
@@ -42,7 +51,7 @@ export class AdminService {
     } catch (error: any) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : 'unexpected error',
+        error: error instanceof Error ? error.message : "unexpected error",
       };
     }
   }
@@ -53,7 +62,7 @@ export class AdminService {
       if (!data) {
         return {
           ok: false,
-          error: 'data required',
+          error: "data required",
         };
       }
       const update = await this.tournamentService.updateTournament(data);
@@ -64,7 +73,7 @@ export class AdminService {
     } catch (error: any) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : 'unexpected error',
+        error: error instanceof Error ? error.message : "unexpected error",
       };
     }
   }
@@ -75,7 +84,7 @@ export class AdminService {
       if (!id) {
         return {
           ok: false,
-          error: 'id is required',
+          error: "id is required",
         };
       }
       const deletedTournament = await this.tournamentService.deleteTournament(
@@ -88,47 +97,50 @@ export class AdminService {
     } catch (error: any) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : 'unexpected error',
+        error: error instanceof Error ? error.message : "unexpected error",
       };
     }
   }
 
   // delete admin
- async deleteAdmin(adminId: string) {
+  async deleteAdmin(adminId: string) {
     try {
-        if (!adminId) {
-            return {
-                ok: false,
-                error: 'Admin ID is required',
-            };
-        }
-
-        const admin = await this.prismaService.admin.findUnique({
-            where: { id: adminId },
-        });
-
-        if (!admin) {
-            return {
-                ok: false,
-                error: 'No admin found with this ID',
-            };
-        }
-
-        await this.prismaService.admin.delete({
-            where: { id: adminId },
-        });
-
+      if (!adminId) {
         return {
-            ok: true,
-            message: 'Admin deleted successfully',
+          ok: false,
+          error: "Admin ID is required",
         };
+      }
+
+      const admin = await this.prismaService.admin.findUnique({
+        where: { id: adminId },
+      });
+
+      if (!admin) {
+        return {
+          ok: false,
+          error: "No admin found with this ID",
+        };
+      }
+
+      await this.prismaService.admin.delete({
+        where: { id: adminId },
+      });
+
+      return {
+        ok: true,
+        message: "Admin deleted successfully",
+      };
     } catch (error: any) {
-        return {
-            ok: false,
-            error: error instanceof Error ? error.message : 'An unexpected error occurred',
-        };
+      return {
+        ok: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred",
+      };
     }
-}
+  }
 
   // get the teams in the tournament
   async getTeamsInTournament(tournamentId: string) {
@@ -136,7 +148,7 @@ export class AdminService {
       if (!tournamentId) {
         return {
           ok: false,
-          error: 'tournament id is required',
+          error: "tournament id is required",
         };
       }
       const teams = await this.tournamentService.getTournamentTeams(
@@ -149,7 +161,7 @@ export class AdminService {
     } catch (error: any) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : 'unexpected error',
+        error: error instanceof Error ? error.message : "unexpected error",
       };
     }
   }
@@ -160,7 +172,7 @@ export class AdminService {
       if (!managerId || !tournamentId) {
         return {
           ok: false,
-          error: 'Both id is required',
+          error: "Both id is required",
         };
       }
       const tournament = await this.prismaService.tournament.findUnique({
@@ -170,7 +182,7 @@ export class AdminService {
       if (!tournament) {
         return {
           ok: false,
-          error: 'no tournament by this id',
+          error: "no tournament by this id",
         };
       }
       const manager = await this.prismaService.admin.findUnique({
@@ -179,7 +191,7 @@ export class AdminService {
       if (!manager) {
         return {
           ok: false,
-          error: 'no manager in this',
+          error: "no manager in this",
         };
       }
       const assignManager = await this.prismaService.tournament.update({
@@ -194,7 +206,7 @@ export class AdminService {
     } catch (error: any) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : 'unexpected error',
+        error: error instanceof Error ? error.message : "unexpected error",
       };
     }
   }
@@ -203,7 +215,7 @@ export class AdminService {
   async getTournamentManagers() {
     try {
       const managers = await this.prismaService.admin.findMany({
-        where: { role: 'tournamentManager' },
+        where: { role: "tournamentManager" },
         include: {
           tournaments: true,
         },
@@ -215,7 +227,7 @@ export class AdminService {
     } catch (error: any) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : 'unexpected error',
+        error: error instanceof Error ? error.message : "unexpected error",
       };
     }
   }
@@ -226,7 +238,7 @@ export class AdminService {
       if (!tournamentId || !managerId) {
         return {
           ok: false,
-          error: 'Both id is required',
+          error: "Both id is required",
         };
       }
       const tournament = await this.prismaService.tournament.findUnique({
@@ -236,7 +248,7 @@ export class AdminService {
       if (!tournament) {
         return {
           ok: false,
-          error: 'no tournament by this id',
+          error: "no tournament by this id",
         };
       }
 
@@ -247,7 +259,7 @@ export class AdminService {
       if (!manager) {
         return {
           ok: false,
-          error: 'no manager in this',
+          error: "no manager in this",
         };
       }
       const removed = await this.prismaService.tournament.update({
@@ -261,7 +273,7 @@ export class AdminService {
     } catch (error: any) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : 'unexpected error',
+        error: error instanceof Error ? error.message : "unexpected error",
       };
     }
   }
@@ -270,7 +282,7 @@ export class AdminService {
   async getAllAdmin() {
     try {
       const allAdmin = await this.prismaService.admin.findMany({
-        where: { role: 'tournamentManager' },
+        where: { role: "tournamentManager" },
       });
 
       return {
@@ -292,7 +304,7 @@ export class AdminService {
       if (!content.type || !content.title || !content.content) {
         return {
           ok: false,
-          error: 'each content is requierd',
+          error: "each content is requierd",
         };
       }
       const news = await this.notificationService.broadCastToWeb(
@@ -325,7 +337,7 @@ export class AdminService {
       if (!newsId) {
         return {
           ok: false,
-          error: 'news id is requierd',
+          error: "news id is requierd",
         };
       }
       const update = await this.notificationService.updateBroadCast(
@@ -356,7 +368,7 @@ export class AdminService {
       if (!newsId) {
         return {
           ok: false,
-          error: 'news id is requierd',
+          error: "news id is requierd",
         };
       }
       const deletedNews = await this.notificationService.deleteBroadCast(
@@ -423,5 +435,173 @@ export class AdminService {
         error: error.message,
       };
     }
+  }
+  async getAllMessageMeta(): Promise<{
+    ok: boolean;
+    message: string;
+    data:
+      | {
+          senderId: string;
+          senderName: string;
+          tournamentName: string;
+          lastMessage: string;
+          lastMessageAt: Date;
+        }[]
+      | null;
+  }> {
+    const admin = await this.prismaService.admin.findFirst({
+      where: { role: "superAdmin" },
+    });
+
+    if (!admin) {
+      return {
+        ok: false,
+        message: "No super admin found",
+        data: null,
+      };
+    }
+    const messages = await this.prismaService.notification.findMany({
+      where: {
+        OR: [{ receiverAdminId: admin.id }, { senderAdminId: admin.id }],
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        message: true,
+        createdAt: true,
+        sender: {
+          select: {
+            id: true,
+            fullName: true,
+            tournaments: {
+              select: {
+                id: true,
+                tournamentName: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    const conversationsMap = new Map<
+      string,
+      {
+        senderId: string;
+        senderName: string;
+        tournamentName: string;
+        lastMessage: string;
+        lastMessageAt: Date;
+      }
+    >();
+    for (const msg of messages) {
+      const sender = msg.sender;
+      if (!sender) continue;
+      const senderId = sender.id;
+      const tournament = sender.tournaments[0]; // assuming 1 active tournament
+      const key = `${senderId}-${tournament?.id ?? "no-tournament"}`;
+      if (!conversationsMap.has(key)) {
+        conversationsMap.set(key, {
+          senderId,
+          senderName: sender.fullName,
+          tournamentName: tournament?.tournamentName ?? "N/A",
+          lastMessage: msg.message ?? "",
+          lastMessageAt: msg.createdAt,
+        });
+      }
+    }
+    const meta = Array.from(conversationsMap.values());
+    if (meta.length === 0) {
+      return {
+        ok: true,
+        message: "No messages found",
+        data: [],
+      };
+    }
+    return {
+      ok: true,
+      message: "Message meta fetched successfully",
+      data: meta.filter((m) => m.senderId != admin.id),
+    };
+  }
+  async getMessageOfAdmin(clientId: string) {
+    const res = await this.notificationService.getAdminNotification(clientId);
+    if (!res) {
+      return {
+        ok: false,
+        message: "no resposne from the api or smtg went wrong",
+      };
+    }
+    if (!res.ok) {
+      return {
+        ok: false,
+        message: res.error,
+      };
+    }
+    return {
+      ok: true,
+      data: res.data,
+    };
+  }
+  async sendDirectMessage(clientId: string, message: string) {
+    const admin = await this.prismaService.admin.findFirst({
+      where: { role: "superAdmin" },
+      select: { id: true },
+    });
+    if (!admin) {
+      return {
+        ok: false,
+        message: "no admin found",
+      };
+    }
+    const res = await this.notificationService.sendNotification(
+      admin.id,
+      message,
+      clientId
+    );
+    if (!res) {
+      return {
+        ok: false,
+        message: "no resposne form th api",
+      };
+    }
+    if (!res.ok) {
+      return {
+        ok: false,
+        message: res.error,
+      };
+    }
+    return {
+      ok: true,
+      message: "i thin it is send buddy",
+    };
+  }
+  async markRead(id: string) {
+    return await this.notificationService.markReadMessage(id);
+  }
+  async createManager(username: string, fullName: string, email: string) {
+    const password = generatePassword.toString();
+    const res = await this.authService.signup(
+      username,
+      fullName,
+      email,
+      password
+    );
+    if (!res) {
+      return {
+        ok: false,
+        message: "i have no idea why this happen to u",
+      };
+    }
+    if (!res.ok) {
+      return {
+        ok: false,
+        message: res.error,
+      };
+    }
+    return {
+      ok: true,
+      data: { password, managerId: res.data?.id },
+    };
   }
 }
