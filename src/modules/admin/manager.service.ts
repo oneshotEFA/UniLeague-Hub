@@ -326,7 +326,6 @@ export class ManagerServices {
         data: "no message fund",
       };
     }
-    console.log(res.data);
     return {
       ok: true,
       error: res.error,

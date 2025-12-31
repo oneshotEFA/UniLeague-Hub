@@ -78,4 +78,38 @@ export class NotificationController {
           .build(res)
       );
   }
+  static async sendMailToManager(req: Request, res: Response) {
+    const { credentials, tournamentName } = req.body;
+
+    const notification = await notificationService.sendEmailToManager(
+      credentials,
+      tournamentName
+    );
+
+    if (!notification) {
+      return res
+        .status(400)
+        .json(new ApiResponseBuilder().badRequest("notification").build(res));
+    }
+    return res.status(200).json(
+      new ApiResponseBuilder()
+        .ok("email sent")
+
+        .build(res)
+    );
+  }
+  static async sendMailToMaintenance(req: Request, res: Response) {
+    const { id } = req.body;
+
+    const notification = await notificationService.sendMaintenanceEmail(id);
+
+    if (!notification) {
+      return res
+        .status(400)
+        .json(new ApiResponseBuilder().badRequest("notification").build(res));
+    }
+    return res
+      .status(200)
+      .json(new ApiResponseBuilder().ok("email sent").build(res));
+  }
 }
