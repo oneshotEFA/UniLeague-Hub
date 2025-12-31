@@ -2,6 +2,7 @@ import { AdminRole, NotificationType } from "../../../generated/prisma";
 import { prisma } from "../../config/db.config";
 import { GalleryService } from "../gallery/gallery.service";
 import transporter from "../../config/mail.config";
+import { generateManagerEmailHTML, ManagerCredentials } from "./utility";
 
 interface NewsContent {
   type?: string;
@@ -152,6 +153,7 @@ export class NotificationService {
           error: "content to notfication is required",
         };
       }
+
       const tournament = await this.prismaService.tournament.findUnique({
         where: { id: tournamentId },
       });
@@ -165,7 +167,8 @@ export class NotificationService {
         data: {
           type: NotificationType.TOURNAMENT_UPDATE,
           senderAdminId,
-          meta: content,
+          meta: typeof content === "string" ? JSON.parse(content) : content,
+
           tournamentId,
         },
       });
@@ -478,6 +481,7 @@ export class NotificationService {
           senderAdminId: null,
           tournamentId: null,
         },
+        select: { id: true, type: true, meta: true, createdAt: true },
       });
       if (systemLogs.length === 0) {
         return {
@@ -499,8 +503,9 @@ export class NotificationService {
   }
 
   //send email
-  async sendMaintenanceEmail(notifcationId: string, maintenanceEmail: string) {
+  async sendMaintenanceEmail(notifcationId: string) {
     try {
+      const maintenanceEmail = process.env.MaintenanceEmail;
       const notifcation = await this.prismaService.notification.findUnique({
         where: { id: notifcationId },
       });
@@ -519,9 +524,9 @@ export class NotificationService {
 
       const meta = notifcation.meta as Record<string, any>;
       const type = meta.type;
-      const categores = meta.categores;
+      const categores = meta.category;
       const severity = meta.severity;
-      const subject = "maintence issue";
+      const subject = "maintenance issue";
       const messageDeveloper = meta.messageDeveloper;
       const htmlContent = `
     <html>
@@ -581,7 +586,7 @@ export class NotificationService {
   `;
 
       await transporter.sendMail({
-        from: `"Your App" <${process.env.SUPERADMIN_EMAIL}>`,
+        from: `"Your App" <${process.env.ADMIN}>`,
         to: maintenanceEmail,
         subject: subject,
         text: "You have a new maintenance notification. Please check your email for details.",
@@ -591,6 +596,53 @@ export class NotificationService {
       return { ok: true, message: "Maintenance email sent successfully!" };
     } catch (error: any) {
       return { ok: false, error: error.message };
+    }
+  }
+  async markReadMessage(id: string) {
+    try {
+      await this.prismaService.notification.update({
+        where: {
+          id,
+        },
+        data: {
+          isRead: true,
+        },
+      });
+      return {
+        ok: true,
+        message: "read completed",
+      };
+    } catch (error) {
+      console.log(error);
+      return {
+        ok: false,
+        message: "smtg thing just happened",
+      };
+    }
+  }
+  async sendEmailToManager(
+    credentials: ManagerCredentials,
+    tournamentName: string
+  ) {
+    try {
+      const { email, username, temporaryPassword } = credentials;
+      const info = await transporter.sendMail({
+        from: `"UniLeague Hub" <${process.env.ADMIN}>`,
+        to: email,
+        subject: `You’ve been assigned as Manager for ${tournamentName}`,
+        html: generateManagerEmailHTML({
+          email,
+          username,
+          password: temporaryPassword,
+          tournamentName,
+        }),
+      });
+
+      return {
+        success: info.accepted.includes(email),
+      };
+    } catch (error) {
+      return false;
     }
   }
 }

@@ -1,15 +1,22 @@
-import { Request, Response } from 'express';
-import { ApiResponseBuilder } from '../../common/utils/ApiResponse';
-import { NotificationService } from '../notifications/notification.servie';
-import { AdminService } from './admin.service';
-import { prisma } from '../../config/db.config';
-import { GalleryService } from '../gallery/gallery.service';
-import { TournamentService } from '../tournaments/tournament.service';
+import { Request, Response } from "express";
+import { ApiResponseBuilder } from "../../common/utils/ApiResponse";
+import { NotificationService } from "../notifications/notification.servie";
+import { AdminService } from "./admin.service";
+import { prisma } from "../../config/db.config";
+import { GalleryService } from "../gallery/gallery.service";
+import { TournamentService } from "../tournaments/tournament.service";
+import { AuthService } from "../auth/auth.service";
 
 const gallery = new GalleryService();
 const tournament = new TournamentService(prisma, gallery);
 const notificationService = new NotificationService(prisma, gallery);
-const adminService = new AdminService(prisma, tournament, notificationService);
+const auth = new AuthService();
+const adminService = new AdminService(
+  prisma,
+  tournament,
+  notificationService,
+  auth
+);
 
 export class AdminControl {
   static async createTournament(req: Request, res: Response) {
@@ -20,11 +27,14 @@ export class AdminControl {
           .status(400)
           .json(
             new ApiResponseBuilder()
-              .badRequest('Logo file is required')
+              .badRequest("Logo file is required")
               .build(res)
           );
       }
-      const createTournament = await tournament.createTournament({ ...req.body, logo: req.file });
+      const createTournament = await tournament.createTournament({
+        ...req.body,
+        logo: req.file,
+      });
 
       if (!createTournament.ok) {
         return res
@@ -40,16 +50,16 @@ export class AdminControl {
         .status(201)
         .json(
           new ApiResponseBuilder()
-            .created('Tournament created successfully')
+            .created("Tournament created successfully")
             .withData(createTournament.data)
             .build(res)
         );
     } catch (err) {
-      console.error('Error during tournament creation:', err);
+      console.error("Error during tournament creation:", err);
       return res
         .status(500)
         .json(
-          new ApiResponseBuilder().internalError('Server error').build(res)
+          new ApiResponseBuilder().internalError("Server error").build(res)
         );
     }
   }
@@ -66,7 +76,7 @@ export class AdminControl {
       .status(200)
       .json(
         new ApiResponseBuilder()
-          .created('updated')
+          .created("updated")
           .withData(update.data)
           .build(res)
       );
@@ -86,7 +96,7 @@ export class AdminControl {
       .status(200)
       .json(
         new ApiResponseBuilder()
-          .created('tournament deleted')
+          .created("tournament deleted")
           .withData(deleted.data)
           .build(res)
       );
@@ -106,7 +116,7 @@ export class AdminControl {
       .status(200)
       .json(
         new ApiResponseBuilder()
-          .created('admin deleted')
+          .created("admin deleted")
           .withData(deleted)
           .build(res)
       );
@@ -124,7 +134,7 @@ export class AdminControl {
       .status(200)
       .json(
         new ApiResponseBuilder()
-          .created('tournament teams')
+          .created("tournament teams")
           .withData(teams.data)
           .build(res)
       );
@@ -149,7 +159,7 @@ export class AdminControl {
       .status(200)
       .json(
         new ApiResponseBuilder()
-          .created('manager assigned')
+          .created("manager assigned")
           .withData(manager.data)
           .build(res)
       );
@@ -167,7 +177,7 @@ export class AdminControl {
       .status(200)
       .json(
         new ApiResponseBuilder()
-          .created('tournamnet manager')
+          .created("tournamnet manager")
           .withData(managers.data)
           .build(res)
       );
@@ -192,7 +202,7 @@ export class AdminControl {
       .status(200)
       .json(
         new ApiResponseBuilder()
-          .created('manager removed')
+          .created("manager removed")
           .withData(removeManager)
           .build(res)
       );
@@ -210,7 +220,7 @@ export class AdminControl {
       .status(200)
       .json(
         new ApiResponseBuilder()
-          .created('all admins')
+          .created("all admins")
           .withData(admins.data)
           .build(res)
       );
@@ -233,7 +243,7 @@ export class AdminControl {
       .status(200)
       .json(
         new ApiResponseBuilder()
-          .created('news is created')
+          .created("news is created")
           .withData(removeManager.data)
           .build(res)
       );
@@ -254,7 +264,7 @@ export class AdminControl {
       .status(200)
       .json(
         new ApiResponseBuilder()
-          .created('updated')
+          .created("updated")
           .withData(updated.data)
           .build(res)
       );
@@ -274,7 +284,7 @@ export class AdminControl {
       .status(200)
       .json(
         new ApiResponseBuilder()
-          .created('deleted')
+          .created("deleted")
           .withData(deleted.data)
           .build(res)
       );
@@ -292,7 +302,7 @@ export class AdminControl {
       .status(200)
       .json(
         new ApiResponseBuilder()
-          .created('managers')
+          .created("managers")
           .withData(managers.data)
           .build(res)
       );
@@ -310,9 +320,52 @@ export class AdminControl {
       .status(200)
       .json(
         new ApiResponseBuilder()
-          .created('system logs')
+          .created("system logs")
           .withData(logs.data)
           .build(res)
       );
+  }
+  static async getAllMessageMeta(req: Request, res: Response) {
+    const logs = await adminService.getAllMessageMeta();
+    if (!logs) {
+      return res
+        .status(400)
+        .json(new ApiResponseBuilder().badRequest("smtg wrong").build(res));
+    }
+    return res
+      .status(200)
+      .json(
+        new ApiResponseBuilder()
+          .ok("get messages")
+          .withData(logs.data)
+          .build(res)
+      );
+  }
+  static async getMessageOfAdmin(req: Request, res: Response) {
+    const { id } = req.params;
+    const logs = await adminService.getMessageOfAdmin(id);
+    if (!logs) {
+      return new ApiResponseBuilder().badRequest("smtg wrong").build(res);
+    }
+    return new ApiResponseBuilder()
+      .ok("get messages of specify manager")
+      .withData(logs.data)
+      .build(res);
+  }
+  static async sendDirectMessageToClients(req: Request, res: Response) {
+    const { managerId, message } = req.body;
+    const logs = await adminService.sendDirectMessage(managerId, message);
+    if (!logs) {
+      return new ApiResponseBuilder().badRequest("smtg wrong").build(res);
+    }
+    return new ApiResponseBuilder().ok(logs.message).build(res);
+  }
+  static async markRead(req: Request, res: Response) {
+    const { id } = req.params;
+    const logs = await adminService.markRead(id);
+    if (!logs) {
+      return new ApiResponseBuilder().badRequest("smtg wrong").build(res);
+    }
+    return new ApiResponseBuilder().ok(logs.message).build(res);
   }
 }

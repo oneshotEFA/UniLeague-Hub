@@ -326,11 +326,23 @@ export class ManagerServices {
         data: "no message fund",
       };
     }
-    console.log(res.data);
     return {
       ok: true,
       error: res.error,
       data: res.data,
+    };
+  }
+  async deleteNews(id: string) {
+    const res = await notificationService.deleteBroadCast(id);
+    if (!res) {
+      return {
+        ok: false,
+        error: "not working",
+      };
+    }
+    return {
+      ok: true,
+      message: "deleted",
     };
   }
 }
