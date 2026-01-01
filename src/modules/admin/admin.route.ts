@@ -2,6 +2,7 @@ import { Router } from "express";
 import { upload } from "../../middlewares/multer";
 import { AdminControl } from "./admin.controller";
 import { NotificationController } from "../notifications/notifcation.controller";
+import { reqAuth } from "../../middlewares/reqAuth";
 
 const adminRouter = Router();
 // Get all admins

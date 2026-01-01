@@ -66,6 +66,13 @@ export class AuthService {
         return { ok: false, error: "Invalid Credential" };
       }
       const tid = user.tournaments?.[0]?.id ?? null;
+      if (tid === null && user.role !== "superAdmin") {
+        return {
+          ok: false,
+          error:
+            "You are not authorized for tournament Management yet, or your eligibility has expired. Please contact the administrator for assistance.",
+        };
+      }
       const accessPayload = {
         id: user.id,
         username: user.username,

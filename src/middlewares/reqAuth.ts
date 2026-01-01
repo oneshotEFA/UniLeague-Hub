@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 export const reqAuth = (req: Request, res: Response, next: NextFunction) => {
-  const jwtKey = process.env.JWT_KEY || "";
+  const jwtKey = process.env.ACCESS_SECRET || "";
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     res.status(401).json({ success: false, message: "No token provided" });

@@ -143,13 +143,9 @@ export class AdminControl {
   //assign manager to tournament
 
   static async assignManagerToTournament(req: Request, res: Response) {
-    const id = req.params.id;
-    const tournament = req.params.Id;
+    const { managerId, id } = req.params;
 
-    const manager = await adminService.assignManagerToTournament(
-      id,
-      tournament
-    );
+    const manager = await adminService.assignManagerToTournament(managerId, id);
     if (!manager.ok) {
       return res
         .status(400)
