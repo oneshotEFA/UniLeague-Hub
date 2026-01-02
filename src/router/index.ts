@@ -10,6 +10,7 @@ import tournamentRoute from "../modules/tournaments/tournament.route";
 import managerRouter from "../modules/admin/manager.route";
 import notifcationRouter from "../modules/notifications/notification.route";
 import adminRouter from "../modules/admin/admin.route";
+import galleryRoute from "../modules/gallery/gallery.route";
 const apiRouter = Router();
 apiRouter.use("/auth", authRouter);
 apiRouter.use("/tournaments", tournamentRoute);
@@ -21,4 +22,5 @@ apiRouter.use("/matches", matchesRouter); // Placeholder for match routes
 apiRouter.use("/manager", managerRouter);
 apiRouter.use("/notification", notifcationRouter);
 apiRouter.use("/admin", adminRouter);
+apiRouter.use("/gallery", galleryRoute);
 export default apiRouter;
