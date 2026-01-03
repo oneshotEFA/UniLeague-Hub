@@ -96,6 +96,39 @@ export class GalleryService {
       return { ok: false, error: "Failed to delete image" };
     }
   }
+  async getGalleryOwnerId(id: string) {
+    try {
+      const res = await this.prismaService.mediaGallery.findMany({
+        where: { ownerId: id, NOT: { usage: "LOGO" } },
+        select: { id: true, url: true, isPrimary: true, usage: true },
+      });
+      if (!res) {
+        return {
+          ok: false,
+          message: "Service Not Available",
+          data: [],
+        };
+      }
+      if (res.length === 0) {
+        return {
+          ok: false,
+          message: "No Gallery Found at this owner",
+          data: [],
+        };
+      }
+      return {
+        ok: true,
+        message: "Gallery Fetched",
+        data: res,
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        message: "Smtg crash at the moment",
+        data: [],
+      };
+    }
+  }
 
   private async upload(
     buffer: Buffer,
