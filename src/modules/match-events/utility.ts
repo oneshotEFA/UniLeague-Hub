@@ -67,7 +67,14 @@ export async function reverseGoal(tx: any, event: any) {
       minute: event.minute,
     },
   });
-
+  const match = await tx.match.findUnique({ where: { id: event.matchId } });
+  const isHome = match.homeTeamId === event.eventTeamId;
+  await tx.match.update({
+    where: { id: event.matchId },
+    data: isHome
+      ? { homeScore: { decrement: 1 } }
+      : { awayScore: { decrement: 1 } },
+  });
   await tx.playerMatchStats.update({
     where: {
       playerId_matchId: {
