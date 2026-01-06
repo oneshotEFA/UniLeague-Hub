@@ -9,7 +9,12 @@
 - getTodayMatches()
 - getLiveMatches() */
 import { prisma } from "../../config/db.config";
-import { match, UpdateMatchSchedule } from "./mtype";
+import {
+  getNextDaysRange,
+  getPastDaysRange,
+  match,
+  UpdateMatchSchedule,
+} from "./mtype";
 import { eventBus } from "../../events/event-bus";
 import { MATCH_FINISHED, TEAMPOWER } from "../../events/events";
 
@@ -443,5 +448,143 @@ export class MatchService {
         error: error instanceof Error ? error.message : "Unknown error",
       };
     }
+  }
+  async getRecentMatchesAll() {
+    const { start, end } = getPastDaysRange(7);
+    const matches = await this.findMatches({
+      start,
+      end,
+      includeStats: true,
+      order: "desc",
+    });
+
+    return {
+      ok: true,
+      data: matches.map((m) => ({
+        ...m,
+        scheduledDate: this.formatDate(m.scheduledDate),
+      })),
+    };
+  }
+
+  async getRecentMatchesTournament(id: string) {
+    const { start, end } = getPastDaysRange(7);
+    const matches = await this.findMatches({
+      start,
+      end,
+      includeStats: true,
+      tournamentId: id,
+      order: "desc",
+    });
+
+    return {
+      ok: true,
+      data: matches.map((m) => ({
+        ...m,
+        scheduledDate: this.formatDate(m.scheduledDate),
+      })),
+    };
+  }
+  async getRecentMatchesTeam(id: string) {
+    const { start, end } = getPastDaysRange(7);
+    const matches = await this.findMatches({
+      start,
+      end,
+      includeStats: true,
+      teamId: id,
+      order: "desc",
+    });
+
+    return {
+      ok: true,
+      data: matches.map((m) => ({
+        ...m,
+        scheduledDate: this.formatDate(m.scheduledDate),
+      })),
+    };
+  }
+  async getNextWeekMatches() {
+    const { start, end } = getNextDaysRange(7);
+    const matches = await this.findMatches({
+      start,
+      end,
+    });
+
+    return {
+      ok: true,
+      data: matches.map((m) => ({
+        ...m,
+        scheduledDate: this.formatDate(m.scheduledDate),
+      })),
+    };
+  }
+  async getNextWeekMatchesTournament(id: string) {
+    const { start, end } = getNextDaysRange(15);
+    const matches = await this.findMatches({
+      start,
+      end,
+
+      tournamentId: id,
+    });
+
+    return {
+      ok: true,
+      data: matches.map((m) => ({
+        ...m,
+        scheduledDate: this.formatDate(m.scheduledDate),
+      })),
+    };
+  }
+  async getNextWeekMatchesTeam(id: string) {
+    const { start, end } = getNextDaysRange(15);
+    const matches = await this.findMatches({
+      start,
+      end,
+
+      teamId: id,
+    });
+
+    return {
+      ok: true,
+      data: matches.map((m) => ({
+        ...m,
+        scheduledDate: this.formatDate(m.scheduledDate),
+      })),
+    };
+  }
+  private async findMatches({
+    start,
+    end,
+    tournamentId,
+    teamId,
+    includeStats = false,
+    order = "asc",
+  }: {
+    start: Date;
+    end: Date;
+    tournamentId?: string;
+    teamId?: string;
+    includeStats?: boolean;
+    order?: "asc" | "desc";
+  }) {
+    return this.prismaService.match.findMany({
+      where: {
+        scheduledDate: { gte: start, lte: end },
+        ...(tournamentId && { tournamentId }),
+        ...(teamId && {
+          OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }],
+        }),
+      },
+      include: {
+        homeTeam: true,
+        awayTeam: true,
+        tournament: true,
+        ...(includeStats && {
+          events: true,
+          goalScore: true,
+        }),
+      },
+      orderBy: { scheduledDate: order },
+    });
   }
 }
