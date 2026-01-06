@@ -40,7 +40,10 @@ router.get("/live/all", MatchController.getLiveMatches);
 router.get("/today/:tournamentId", MatchController.getTodayMatchesByTournament);
 
 // GET LIVE MATCHES BY TOURNAMENT
-router.get("/live/:tournamentId", MatchController.getLiveMatchesByTournament);
+router.get(
+  "/live/:tournamentId/tournament",
+  MatchController.getLiveMatchesByTournament
+);
 
 //recent
 router.get("/recent/:id/tournament", MatchController.recentMatchTournament);
