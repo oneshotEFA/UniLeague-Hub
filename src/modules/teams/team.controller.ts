@@ -43,14 +43,10 @@ export class teamControl {
         .status(400)
         .json(new ApiResponseBuilder().badRequest(value.error).build(res));
     }
-    return res
-      .status(200)
-      .json(
-        new ApiResponseBuilder()
-          .ok("teams fetched")
-          .withData(value.data)
-          .build(res)
-      );
+    return new ApiResponseBuilder()
+      .ok("teams fetched")
+      .withData(value.data)
+      .build(res);
   }
 
   // get team by id

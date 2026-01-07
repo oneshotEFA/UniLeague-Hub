@@ -324,7 +324,15 @@ export class TeamService {
   }
   async getAllTeams() {
     try {
-      const teams = await this.PrismaService.team.findMany();
+      const teams = await this.PrismaService.team.findMany({
+        include: {
+          tournaments: {
+            select: {
+              tournament: { select: { id: true, tournamentName: true } },
+            },
+          },
+        },
+      });
 
       const result = await Promise.all(
         teams.map(async (team) => {

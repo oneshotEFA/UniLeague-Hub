@@ -187,4 +187,68 @@ export class MatchController {
       .withData(result.data)
       .build(res);
   }
+  static async nextMatchAll(req: Request, res: Response) {
+    const result = await matchService.getNextWeekMatches();
+    if (!result.ok) {
+      return new ApiResponseBuilder().notFound("result.error!").build(res);
+    }
+    return new ApiResponseBuilder()
+      .ok("next week match fetched")
+      .withData(result.data)
+      .build(res);
+  }
+  static async nextMatchTournament(req: Request, res: Response) {
+    const { id } = req.params;
+    const result = await matchService.getNextWeekMatchesTournament(id);
+    if (!result.ok) {
+      return new ApiResponseBuilder().notFound("result.error!").build(res);
+    }
+    return new ApiResponseBuilder()
+      .ok("next week match fetched")
+      .withData(result.data)
+      .build(res);
+  }
+  static async nextMatchTeam(req: Request, res: Response) {
+    const { id } = req.params;
+    const result = await matchService.getNextWeekMatchesTeam(id);
+    if (!result.ok) {
+      return new ApiResponseBuilder().notFound("result.error!").build(res);
+    }
+    return new ApiResponseBuilder()
+      .ok("next week match fetched")
+      .withData(result.data)
+      .build(res);
+  }
+  static async recentMatchAll(req: Request, res: Response) {
+    const result = await matchService.getRecentMatchesAll();
+    if (!result.ok) {
+      return new ApiResponseBuilder().notFound("esult.error!").build(res);
+    }
+    return new ApiResponseBuilder()
+      .ok("recent week match fetched")
+      .withData(result.data)
+      .build(res);
+  }
+  static async recentMatchTeam(req: Request, res: Response) {
+    const { id } = req.params;
+    const result = await matchService.getRecentMatchesTeam(id);
+    if (!result.ok) {
+      return new ApiResponseBuilder().notFound("result.error!").build(res);
+    }
+    return new ApiResponseBuilder()
+      .ok("recent week match fetched")
+      .withData(result.data)
+      .build(res);
+  }
+  static async recentMatchTournament(req: Request, res: Response) {
+    const { id } = req.params;
+    const result = await matchService.getRecentMatchesTournament(id);
+    if (!result.ok) {
+      return new ApiResponseBuilder().notFound("result.error!").build(res);
+    }
+    return new ApiResponseBuilder()
+      .ok("recent week match fetched")
+      .withData(result.data)
+      .build(res);
+  }
 }

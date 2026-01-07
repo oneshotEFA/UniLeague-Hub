@@ -67,7 +67,12 @@ route.put(
   requireAdmin(["tournamentManager"]),
   MatchController.endMatch
 );
-
+route.delete(
+  "/match/event/:id/delete",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
+  MatchEventController.deleteEvent
+);
 //players
 route.post(
   "/player/transfer",
