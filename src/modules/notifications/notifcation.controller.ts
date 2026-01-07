@@ -34,49 +34,40 @@ export class NotificationController {
 
   //get broad cast notification
   static async getBroadCastNotification(req: Request, res: Response) {
-    const adminId = req.params.id;
-    const notfication = await notificationService.getBroadCastNotification();
+    const { page } = req.params;
+    console.log(page);
+    const notfication = await notificationService.getBroadCastNotification(
+      Number(page)
+    );
 
     if (!notfication.ok) {
-      return res
-        .status(400)
-        .json(
-          new ApiResponseBuilder().badRequest(notfication.error).build(res)
-        );
+      return new ApiResponseBuilder().badRequest(notfication.error).build(res);
     }
 
-    return res
-      .status(200)
-      .json(
-        new ApiResponseBuilder()
-          .created("broadcast notification is fetch")
-          .withData(notfication.data)
-          .build(res)
-      );
+    return new ApiResponseBuilder()
+      .ok("broadcast notification is fetch")
+      .withData(notfication.data)
+      .withMeta(notfication?.meta)
+      .build(res);
   }
 
   //get tournament broad cast
   static async getTournamentBroadCast(req: Request, res: Response) {
     const tournamentId = req.params.id;
+    const page = req.query.page;
     const notification = await notificationService.getTournamentBroadCast(
-      tournamentId
+      tournamentId,
+      Number(page)
     );
 
     if (!notification.ok) {
-      return res
-        .status(400)
-        .json(
-          new ApiResponseBuilder().badRequest(notification.error).build(res)
-        );
+      return new ApiResponseBuilder().badRequest(notification.error).build(res);
     }
-    return res
-      .status(200)
-      .json(
-        new ApiResponseBuilder()
-          .created("tournament broadcast fetched")
-          .withData(notification.data)
-          .build(res)
-      );
+    return new ApiResponseBuilder()
+      .ok("tournament broadcast fetched")
+      .withData(notification.data)
+      .withMeta(notification?.meta)
+      .build(res);
   }
   static async sendMailToManager(req: Request, res: Response) {
     const { credentials, tournamentName } = req.body;

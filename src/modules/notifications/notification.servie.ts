@@ -230,70 +230,142 @@ export class NotificationService {
   }
 
   //get broadcast notifications
-  async getBroadCastNotification() {
+  async getBroadCastNotification(page: number = 1) {
     try {
-      const getNotification = await this.prismaService.notification.findMany({
-        where: {
-          type: NotificationType.BROADCAST,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
-      return {
-        ok: true,
-        count: getNotification.length,
-        data: getNotification,
-      };
-    } catch (error: any) {
-      return {
-        ok: false,
-        error: error.message,
-      };
-    }
-  }
+      const limit = 10;
+      const skip = (page - 1) * limit;
 
-  // get tournament broadcass
-  async getTournamentBroadCast(tournamentId: string) {
-    try {
-      if (!tournamentId) {
-        return {
-          ok: false,
-          error: "tournament id must be provided",
-        };
-      }
-      const notifications = await this.prismaService.notification.findMany({
-        where: {
-          type: NotificationType.TOURNAMENT_UPDATE,
-          tournamentId,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
-      const notificationsWithPhoto = await Promise.all(
-        notifications.map(async (notification) => {
-          const media = await this.prismaService.mediaGallery.findMany({
-            where: {
-              ownerId: notification.id,
+      const where = {
+        type: NotificationType.BROADCAST,
+      };
+
+      const [notifications, totalItems] = await Promise.all([
+        this.prismaService.notification.findMany({
+          where,
+          orderBy: {
+            createdAt: "desc",
+          },
+          select: {
+            id: true,
+            sender: {
+              select: { username: true },
+            },
+            type: true,
+            message: true,
+            meta: true,
+            createdAt: true,
+          },
+          skip,
+          take: limit,
+        }),
+        this.prismaService.notification.count({ where }),
+      ]);
+      const result = await Promise.all(
+        notifications.map(async (not) => {
+          const Image = await this.prismaService.mediaGallery.findMany({
+            where: { ownerId: not.id },
+            select: {
+              url: true,
             },
           });
           return {
-            ...notification,
-            media,
+            ...not,
+            Image: Image[0].url,
           };
         })
       );
 
       return {
         ok: true,
-        count: notificationsWithPhoto.length,
-        data: notificationsWithPhoto,
+        data: result,
+        meta: {
+          page,
+          limit,
+          totalItems,
+          totalPages: Math.ceil(totalItems / limit),
+        },
       };
     } catch (error: any) {
       return {
         ok: false,
         error: error.message,
+        meta: {
+          page,
+          limit: 0,
+          totalItems: 0,
+          totalPages: 0,
+        },
+      };
+    }
+  }
+
+  // get tournament broadcass
+  async getTournamentBroadCast(tournamentId: string, page = 1) {
+    try {
+      const limit = 10;
+      const skip = (page - 1) * limit;
+
+      const where = {
+        type: NotificationType.TOURNAMENT_UPDATE,
+        tournamentId,
+      };
+
+      const [notifications, totalItems] = await Promise.all([
+        this.prismaService.notification.findMany({
+          where: { type: NotificationType.TOURNAMENT_UPDATE, tournamentId },
+          orderBy: {
+            createdAt: "desc",
+          },
+          select: {
+            id: true,
+            sender: {
+              select: { username: true },
+            },
+            type: true,
+            message: true,
+            meta: true,
+            createdAt: true,
+          },
+          skip,
+          take: limit,
+        }),
+        this.prismaService.notification.count({ where }),
+      ]);
+      const result = await Promise.all(
+        notifications.map(async (not) => {
+          const Image = await this.prismaService.mediaGallery.findMany({
+            where: { ownerId: not.id },
+            select: {
+              url: true,
+            },
+          });
+          return {
+            ...not,
+            Image: Image[0]?.url ?? "",
+          };
+        })
+      );
+
+      return {
+        ok: true,
+        data: result,
+        meta: {
+          page,
+          limit,
+          totalItems,
+          totalPages: Math.ceil(totalItems / limit),
+        },
+      };
+    } catch (error: any) {
+      return {
+        ok: false,
+        error: error.message,
+        meta: {
+          page,
+          limit: 0,
+          totalItems: 0,
+          totalPages: 0,
+        },
       };
     }
   }
@@ -377,9 +449,10 @@ export class NotificationService {
   // broadcast to the web
   async broadCastToWeb(
     content: {
-      type: string;
-      title: string;
       content: string;
+      title: string;
+      excerpt: string;
+      adminId: string;
     },
     image?: Express.Multer.File
   ) {
@@ -394,8 +467,9 @@ export class NotificationService {
       const broadCast = await this.prismaService.notification.create({
         data: {
           type: NotificationType.BROADCAST,
+          senderAdminId: content.adminId,
           meta: {
-            type: content.type,
+            type: content.excerpt,
             title: content.title,
             contetn: content.content,
           },
