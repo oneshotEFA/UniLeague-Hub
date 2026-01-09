@@ -1,8 +1,9 @@
 //import { PrismaClientKnownRequestError } from "../../../generated/prisma/runtime/client";
-import { ApiResponseBuilder } from '../../common/utils/ApiResponse';
-import { prisma } from '../../config/db.config';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import { ApiResponseBuilder } from "../../common/utils/ApiResponse";
+import { getUserFriendlyError } from "../../common/utils/utility";
+import { prisma } from "../../config/db.config";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 export class AuthService {
   constructor(private prismaService = prisma) {}
 
@@ -18,7 +19,7 @@ export class AuthService {
       });
 
       if (exists) {
-        return { ok: false, error: 'User already exists' };
+        return { ok: false, error: "User already exists" };
       }
       const hashed = await bcrypt.hash(password, 10);
 
@@ -28,7 +29,7 @@ export class AuthService {
           fullName,
           email,
           password: hashed,
-          role: 'tournamentManager',
+          role: "tournamentManager",
         },
       });
 
@@ -58,19 +59,19 @@ export class AuthService {
         },
       });
       if (!user) {
-        return { ok: false, error: 'Invalid Credential' };
+        return { ok: false, error: "Invalid Credential" };
       }
 
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
-        return { ok: false, error: 'Invalid Credential' };
+        return { ok: false, error: "Invalid Credential" };
       }
       const tid = user.tournaments?.[0]?.id ?? null;
-      if (tid === null && user.role !== 'superAdmin') {
+      if (tid === null && user.role !== "superAdmin") {
         return {
           ok: false,
           error:
-            'You are not authorized for tournament Management yet, or your eligibility has expired. Please contact the administrator for assistance.',
+            "You are not authorized for tournament Management yet, or your eligibility has expired. Please contact the administrator for assistance.",
         };
       }
       const accessPayload = {
@@ -81,7 +82,7 @@ export class AuthService {
       };
 
       const token = jwt.sign(accessPayload, process.env.ACCESS_SECRET!, {
-        expiresIn: '59m',
+        expiresIn: "59m",
       });
 
       const refreshPayload = { id: user.id };
@@ -89,7 +90,7 @@ export class AuthService {
       const refreshToken = jwt.sign(
         refreshPayload,
         process.env.REFRESH_SECRET!,
-        { expiresIn: '7d' }
+        { expiresIn: "7d" }
       );
 
       const hashedRefresh = await bcrypt.hash(refreshToken, 10);
@@ -113,7 +114,7 @@ export class AuthService {
     } catch (error) {
       return {
         ok: false,
-        error: 'An error occurred during login',
+        error: "An error occurred during login",
       };
     }
   }
@@ -126,7 +127,7 @@ export class AuthService {
     }
   ) {
     if (!adminId) {
-      return { ok: false, error: 'Admin ID is required' };
+      return { ok: false, error: "Admin ID is required" };
     }
     const data: Record<string, string> = {};
     if (payload.email?.trim()) {
@@ -139,7 +140,7 @@ export class AuthService {
       data.fullName = payload.fullName.trim();
     }
     if (Object.keys(data).length === 0) {
-      return { ok: false, error: 'No valid fields to update' };
+      return { ok: false, error: "No valid fields to update" };
     }
 
     try {
@@ -159,10 +160,10 @@ export class AuthService {
         data: updatedAdmin,
       };
     } catch (error: any) {
-      if (error.code === 'P2002') {
+      if (error.code === "P2002") {
         return {
           ok: false,
-          error: 'Email or username already in use',
+          error: "Email or username already in use",
         };
       }
       return {
@@ -186,7 +187,7 @@ export class AuthService {
       if (!res) {
         return {
           ok: false,
-          message: 'no user found',
+          message: "no user found",
         };
       }
       return {
@@ -194,10 +195,10 @@ export class AuthService {
         data: res,
       };
     } catch (error: any) {
-      if (error.code === 'P2002') {
+      if (error.code === "P2002") {
         return {
           ok: false,
-          error: 'Email or username already in use',
+          error: "Email or username already in use",
         };
       }
       return {
@@ -219,7 +220,7 @@ export class AuthService {
       if (!user) {
         return {
           ok: false,
-          error: 'no admin in this user name',
+          error: "no admin in this user name",
         };
       }
 
@@ -239,11 +240,55 @@ export class AuthService {
         ok: true,
         data: changedPassword,
       };
-      
     } catch (error: any) {
       return {
         ok: false,
         error: error.message,
+      };
+    }
+  }
+  async authPlayerRegistration(key: string) {
+    try {
+      const team = await this.prismaService.team.findUnique({
+        where: { registrationKey: key },
+      });
+      if (!team) {
+        return {
+          ok: false,
+          message: "No team found by this key",
+        };
+      }
+      const today = new Date();
+      today.setHours(0, 0, 0);
+      if (!team.expiredRegistration) {
+        return {
+          ok: false,
+          message: "Team not fully registered contact the manager",
+        };
+      }
+      if (team.expiredRegistration < today) {
+        return {
+          ok: false,
+          message: "registration date is expired",
+        };
+      }
+      const accessPayload = {
+        id: team.id,
+      };
+      const token = jwt.sign(accessPayload, process.env.REGISTRATION_SECRET!, {
+        expiresIn: "30m",
+      });
+      return {
+        ok: true,
+        data: {
+          id: team.id,
+          aToken: token,
+        },
+      };
+    } catch (error: any) {
+      return {
+        ok: false,
+        message: getUserFriendlyError(error),
       };
     }
   }

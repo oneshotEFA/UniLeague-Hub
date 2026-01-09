@@ -1,10 +1,12 @@
 import { Router } from "express";
 import { PlayerControl } from "./player.controller";
 import { upload } from "../../middlewares/multer";
+import { reqUser } from "../../middlewares/reqUser";
 const playerRouter = Router();
 
 playerRouter.post(
   "/create",
+  reqUser,
   upload.single("playerPhoto"),
   PlayerControl.createPlayer
 );

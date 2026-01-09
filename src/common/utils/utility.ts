@@ -80,3 +80,23 @@ export function generateTeamKey(teamId: string, daysValid: number = 30) {
   );
   return token;
 }
+export function getUserFriendlyError(error: unknown): string {
+  if (error instanceof Error) {
+    // Common known cases
+    if (error.message.includes("Unique constraint")) {
+      return "This record already exists.";
+    }
+
+    if (error.message.includes("not found")) {
+      return "Requested resource was not found.";
+    }
+
+    if (error.message.includes("ECONNREFUSED")) {
+      return "Service is temporarily unavailable. Please try again later.";
+    }
+
+    return "Something went wrong. Please try again.";
+  }
+
+  return "Unexpected error occurred.";
+}

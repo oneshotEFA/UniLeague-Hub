@@ -13,6 +13,7 @@ import { GenerateFixtureInput } from "./type";
 import { ImageUsage, MediaOwnerType } from "../../../generated/prisma";
 import { getNextDaysRange } from "../matches/mtype";
 import { generatePassword } from "./utility";
+import bcrypt from "bcryptjs";
 const gallery = new GalleryService();
 const notificationService = new NotificationService(prisma, gallery);
 export class ManagerServices {
@@ -141,16 +142,18 @@ export class ManagerServices {
       tournamentId,
       teamInfo.data!.team.id
     );
-    const registrationKey = generatePassword();
     const accessKey = generatePassword();
-
+    const hashedAccessKey = bcrypt.hash(String(accessKey), 10);
+    const registrationKey = (
+      (teamInfo.data?.team.teamName?.slice(0, 4) ?? "") + generatePassword()
+    ).toUpperCase();
     const expirationDate = getNextDaysRange(14);
     await this.prismaService.team.update({
       where: { id: teamInfo.data?.team.id },
       data: {
-        registrationKey: String(registrationKey),
+        registrationKey,
         expiredRegistration: expirationDate.end,
-        accessKey: String(accessKey),
+        accessKey: String(hashedAccessKey),
       },
     });
     eventBus.emit(REGISTIRATION_KEY, {

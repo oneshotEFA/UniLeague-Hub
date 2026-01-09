@@ -40,9 +40,13 @@ export class AuthController {
   }
 
   static async changePassword(req: Request, res: Response) {
-    const { username, currentPassword, newPassword} = req.body;
+    const { username, currentPassword, newPassword } = req.body;
 
-    const result = await authService.changePassword(username, currentPassword, newPassword);
+    const result = await authService.changePassword(
+      username,
+      currentPassword,
+      newPassword
+    );
 
     if (!result.ok) {
       return new ApiResponseBuilder().badRequest(result.error).build(res);
@@ -53,7 +57,7 @@ export class AuthController {
       .withData(result.data)
       .build(res);
   }
-  
+
   static async updateUser(req: Request, res: Response) {
     const { id, data } = req.body;
 
@@ -75,6 +79,19 @@ export class AuthController {
 
     if (!result.ok) {
       return new ApiResponseBuilder().badRequest(result.error).build(res);
+    }
+
+    return new ApiResponseBuilder()
+      .created("get em")
+      .withData(result.data)
+      .build(res);
+  }
+  static async authPlayer(req: Request, res: Response) {
+    const { key } = req.body;
+    const result = await authService.authPlayerRegistration(key);
+
+    if (!result.ok) {
+      return new ApiResponseBuilder().badRequest(result.message).build(res);
     }
 
     return new ApiResponseBuilder()
