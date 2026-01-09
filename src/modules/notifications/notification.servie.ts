@@ -452,7 +452,7 @@ export class NotificationService {
       content: string;
       title: string;
       excerpt: string;
-      adminId: string;
+      adminId?: string;
     },
     image?: Express.Multer.File
   ) {
@@ -467,7 +467,7 @@ export class NotificationService {
       const broadCast = await this.prismaService.notification.create({
         data: {
           type: NotificationType.BROADCAST,
-          senderAdminId: content.adminId,
+          senderAdminId: content.adminId ?? "",
           meta: {
             type: content.excerpt,
             title: content.title,
