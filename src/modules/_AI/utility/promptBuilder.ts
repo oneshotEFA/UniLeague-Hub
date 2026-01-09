@@ -199,7 +199,9 @@ Instructions:
 
 Return the response in strictly the following JSON format:
 {
-  "announcement": "string"
+   "content": string,
+    "title": string,
+    "excerpt": string,
 }
 `;
 }
