@@ -38,6 +38,22 @@ export class AuthController {
       .withData(result.data)
       .build(res);
   }
+
+  static async changePassword(req: Request, res: Response) {
+    const { username, currentPassword, newPassword} = req.body;
+
+    const result = await authService.changePassword(username, currentPassword, newPassword);
+
+    if (!result.ok) {
+      return new ApiResponseBuilder().badRequest(result.error).build(res);
+    }
+
+    return new ApiResponseBuilder()
+      .created("change was successful")
+      .withData(result.data)
+      .build(res);
+  }
+  
   static async updateUser(req: Request, res: Response) {
     const { id, data } = req.body;
 
