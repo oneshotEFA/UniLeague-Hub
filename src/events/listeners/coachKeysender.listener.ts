@@ -4,22 +4,22 @@ import { withRetry } from "../../common/utils/utility";
 import { NotificationService } from "../../modules/notifications/notification.servie";
 import { GalleryService } from "../../modules/gallery/gallery.service";
 import { prisma } from "../../config/db.config";
+import { CoachCredentials } from "../../modules/notifications/utility";
+import { error } from "console";
 const gallery = new GalleryService();
 const notificationService = new NotificationService(prisma, gallery);
-eventBus.on(
-  REGISTIRATION_KEY,
-  async (payload: { key: string; email: string }) => {
-    await withRetry(
-      async () => {
-        // await notificationService.sendMaintenanceEmail(
-        //   payload.key,
-        //   payload.email
-        // );
-        console.log("email sent to coach");
-      },
-      {
-        retries: 1,
+eventBus.on(REGISTIRATION_KEY, async (payload: CoachCredentials) => {
+  await withRetry(
+    async () => {
+      const res = await notificationService.sendEmailToCoach(payload);
+      if (!res) {
+        console.log(res, "error");
+        throw error;
       }
-    );
-  }
-);
+      console.log("sent");
+    },
+    {
+      retries: 3,
+    }
+  );
+});

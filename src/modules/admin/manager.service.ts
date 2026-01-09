@@ -11,6 +11,8 @@ import { TeamService } from "../teams/team.service";
 import { TournamentService } from "../tournaments/tournament.service";
 import { GenerateFixtureInput } from "./type";
 import { ImageUsage, MediaOwnerType } from "../../../generated/prisma";
+import { getNextDaysRange } from "../matches/mtype";
+import { generatePassword } from "./utility";
 const gallery = new GalleryService();
 const notificationService = new NotificationService(prisma, gallery);
 export class ManagerServices {
@@ -139,11 +141,25 @@ export class ManagerServices {
       tournamentId,
       teamInfo.data!.team.id
     );
-    const key = generateTeamKey(teamInfo.data!.team.id);
+    const registrationKey = generatePassword();
+    const accessKey = generatePassword();
 
+    const expirationDate = getNextDaysRange(14);
+    await this.prismaService.team.update({
+      where: { id: teamInfo.data?.team.id },
+      data: {
+        registrationKey: String(registrationKey),
+        expiredRegistration: expirationDate.end,
+        accessKey: String(accessKey),
+      },
+    });
     eventBus.emit(REGISTIRATION_KEY, {
-      key,
+      registrationKey: String(registrationKey),
+      recipientName: teamInfo.data?.team.coachName,
+      accessKey: String(accessKey),
       email: teamInfo.data!.team.coachEmail,
+      tournamentName: res.data?.tournament.tournamentName,
+      teamName: teamInfo.data?.team.teamName,
     });
     if (!res.ok) {
       return {

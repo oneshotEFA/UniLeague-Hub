@@ -114,7 +114,9 @@ model Team {
   coachName   String?
   coachEmail  String?
   power Int @default(0)
-
+  registrationKey String?
+  accessKey String?
+  expiredRegistration DateTime?
 //relation
   players      Player[]
   matchEvent   MatchEvent[]

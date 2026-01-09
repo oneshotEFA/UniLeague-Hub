@@ -259,6 +259,13 @@ export class TournamentService {
       // 4. Insert the team into the tournament
       const tt = await prisma.tournamentTeam.create({
         data: { tournamentId, teamId },
+        select: {
+          tournament: {
+            select: {
+              tournamentName: true,
+            },
+          },
+        },
       });
 
       return {

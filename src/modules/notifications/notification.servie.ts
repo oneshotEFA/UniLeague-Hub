@@ -2,7 +2,12 @@ import { AdminRole, NotificationType } from "../../../generated/prisma";
 import { prisma } from "../../config/db.config";
 import { GalleryService } from "../gallery/gallery.service";
 import transporter from "../../config/mail.config";
-import { generateManagerEmailHTML, ManagerCredentials } from "./utility";
+import {
+  CoachCredentials,
+  generateManagerEmailHTML,
+  generateTeamAccessEmailHTML,
+  ManagerCredentials,
+} from "./utility";
 
 interface NewsContent {
   type?: string;
@@ -717,6 +722,36 @@ export class NotificationService {
       };
     } catch (error) {
       return false;
+    }
+  }
+  async sendEmailToCoach(credentials: CoachCredentials) {
+    try {
+      const {
+        recipientName,
+        teamName,
+        tournamentName,
+        registrationKey,
+        accessKey,
+        email,
+      } = credentials;
+      const info = await transporter.sendMail({
+        from: `"UniLeague Hub" <${process.env.ADMIN}>`,
+        to: email,
+        subject: `You’ve been assigned as Manager for ${tournamentName}`,
+        html: generateTeamAccessEmailHTML({
+          recipientName,
+          teamName,
+          tournamentName,
+          registrationKey,
+          accessKey,
+        }),
+      });
+
+      return {
+        success: info.accepted.includes(email),
+      };
+    } catch (error) {
+      return { success: false };
     }
   }
 }
