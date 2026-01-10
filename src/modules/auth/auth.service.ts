@@ -1,5 +1,6 @@
 //import { PrismaClientKnownRequestError } from "../../../generated/prisma/runtime/client";
 import { ApiResponseBuilder } from "../../common/utils/ApiResponse";
+import { getUserFriendlyError } from "../../common/utils/utility";
 import { prisma } from "../../config/db.config";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -203,6 +204,91 @@ export class AuthService {
       return {
         ok: false,
         error: error.message,
+      };
+    }
+  }
+
+  async changePassword(
+    username: string,
+    currentPassword: string,
+    newPassword: string
+  ) {
+    try {
+      const user = await this.prismaService.admin.findUnique({
+        where: { username },
+      });
+      if (!user) {
+        return {
+          ok: false,
+          error: "no admin in this user name",
+        };
+      }
+
+      const isPasswordValid = await bcrypt.compare(
+        currentPassword,
+        user.password
+      );
+      if (!isPasswordValid) {
+      }
+      const hasedPassword = await bcrypt.hash(newPassword, 10);
+      const changedPassword = await this.prismaService.admin.update({
+        where: { username },
+        data: { password: hasedPassword },
+      });
+
+      return {
+        ok: true,
+        data: changedPassword,
+      };
+    } catch (error: any) {
+      return {
+        ok: false,
+        error: error.message,
+      };
+    }
+  }
+  async authPlayerRegistration(key: string) {
+    try {
+      const team = await this.prismaService.team.findUnique({
+        where: { registrationKey: key },
+      });
+      if (!team) {
+        return {
+          ok: false,
+          message: "No team found by this key",
+        };
+      }
+      const today = new Date();
+      today.setHours(0, 0, 0);
+      if (!team.expiredRegistration) {
+        return {
+          ok: false,
+          message: "Team not fully registered contact the manager",
+        };
+      }
+      if (team.expiredRegistration < today) {
+        return {
+          ok: false,
+          message: "registration date is expired",
+        };
+      }
+      const accessPayload = {
+        id: team.id,
+      };
+      const token = jwt.sign(accessPayload, process.env.REGISTRATION_SECRET!, {
+        expiresIn: "30m",
+      });
+      return {
+        ok: true,
+        data: {
+          id: team.id,
+          aToken: token,
+        },
+      };
+    } catch (error: any) {
+      return {
+        ok: false,
+        message: getUserFriendlyError(error),
       };
     }
   }

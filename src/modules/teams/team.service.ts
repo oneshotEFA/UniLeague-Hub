@@ -1,4 +1,5 @@
 import { Prisma } from "../../../generated/prisma";
+import { getUserFriendlyError } from "../../common/utils/utility";
 import { prisma } from "../../config/db.config";
 import { GalleryService } from "../gallery/gallery.service";
 export class TeamService {
@@ -217,6 +218,19 @@ export class TeamService {
       }
       const getTeam = await this.PrismaService.team.findUnique({
         where: { id },
+        select: {
+          id: true,
+          teamName: true,
+          coachName: true,
+          coachEmail: true,
+          power: true,
+          tournaments: {
+            select: {
+              tournament: { select: { tournamentName: true } },
+            },
+          },
+          registrationKey: true,
+        },
       });
 
       const logo = await this.galleryService.getImagesByOwner("TEAM", id);
@@ -318,13 +332,21 @@ export class TeamService {
     } catch (error: any) {
       return {
         ok: false,
-        error: error.message,
+        error: getUserFriendlyError(error),
       };
     }
   }
   async getAllTeams() {
     try {
-      const teams = await this.PrismaService.team.findMany();
+      const teams = await this.PrismaService.team.findMany({
+        include: {
+          tournaments: {
+            select: {
+              tournament: { select: { id: true, tournamentName: true } },
+            },
+          },
+        },
+      });
 
       const result = await Promise.all(
         teams.map(async (team) => {

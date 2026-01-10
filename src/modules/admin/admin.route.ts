@@ -34,7 +34,11 @@ adminRouter.delete(
 );
 
 // Create news (image required)
-adminRouter.post("/news", upload.single("image"), AdminControl.createNews);
+adminRouter.post(
+  "/news/create",
+  upload.single("image"),
+  AdminControl.createNews
+);
 // Update news
 adminRouter.put("/news/:id", upload.single("image"), AdminControl.updateNews);
 // Delete news

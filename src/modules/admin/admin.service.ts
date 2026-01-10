@@ -11,13 +11,7 @@ interface NewsContent {
   content: string;
   title: string;
 }
-type ConversationMeta = {
-  senderId: string;
-  senderName: string;
-  tournamentName: string;
-  lastMessage: string;
-  lastMessageAt: Date;
-};
+
 interface UpdateNews {
   type?: string;
   message?: string;
@@ -299,9 +293,18 @@ export class AdminService {
   }
 
   // creating news
-  async createNews(content: NewsContent, image?: Express.Multer.File) {
+  async createNews(
+    content: {
+      content: string;
+      title: string;
+      excerpt: string;
+      adminId: string;
+    },
+    image?: Express.Multer.File
+  ) {
+    // console.log(content);
     try {
-      if (!content.type || !content.title || !content.content) {
+      if (!content.excerpt || !content.title || !content.content) {
         return {
           ok: false,
           error: "each content is requierd",

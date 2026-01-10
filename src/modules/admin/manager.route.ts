@@ -21,6 +21,7 @@ route.post("/match/create", MatchController.createMatch); // single creation
 route.post("/generate/fixture", ManagerController.generateFixture);
 route.get("/matches/:id/tournament", MatchController.getMatches);
 route.post("/match/event/create", MatchEventController.addEvent);
+route.delete("/match/event/:id/delete", MatchEventController.deleteEvent);
 route.put("/match/:id/start", MatchController.startMatch);
 route.put("/match/:id/end", MatchController.endMatch);
 
