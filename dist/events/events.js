@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TRANSFER_NEWS = exports.REGISTIRATION_KEY = exports.TEAMPOWER = exports.MATCH_FINISHED = exports.EVENT_HANDLER = exports.TOURNAMENT_MANAGER_NOTIFICATION = exports.TOURNAMENT_ANNOUNCEMENT = void 0;
+exports.TOURNAMENT_ANNOUNCEMENT = "tournament.announcement";
+exports.TOURNAMENT_MANAGER_NOTIFICATION = "tournament.manager.notification";
+exports.EVENT_HANDLER = "match.event-handler";
+exports.MATCH_FINISHED = "match.finished";
+exports.TEAMPOWER = "team.power";
+exports.REGISTIRATION_KEY = "registration.key.generation";
+exports.TRANSFER_NEWS = "player.transfer.news";

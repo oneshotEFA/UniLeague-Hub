@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const aicontroller_1 = require("./aicontroller");
+const router = (0, express_1.Router)();
+router.post("/generate-fixtures", aicontroller_1.AIController.getTournamentTeams);
+router.post("/generate-group", aicontroller_1.AIController.getGroupStageTeam);
+router.post("/generate-knockout", aicontroller_1.AIController.getKnockOutTeam);
+router.post("/generate-poster", aicontroller_1.AIController.generatePoster);
+router.post("/generate-power", aicontroller_1.AIController.calculateTeamPower);
+router.get("/predict-match/:id", aicontroller_1.AIController.predictMatch);
+router.post("/generate-transfer-anaoucment", aicontroller_1.AIController.generateAnaoucment);
+router.post("/generate-anaoucment", aicontroller_1.AIController.generateTournamentAnaoucment);
+exports.default = router;

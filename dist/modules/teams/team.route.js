@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const team_controller_1 = require("./team.controller");
+const multer_1 = require("../../middlewares/multer");
+const teamRouter = (0, express_1.Router)();
+teamRouter.post("/createTeam", multer_1.upload.single("logo"), team_controller_1.teamControl.createTeam);
+teamRouter.get("/", team_controller_1.teamControl.getTeams);
+teamRouter.get("/:id", team_controller_1.teamControl.getTeamById);
+teamRouter.put("/:id", multer_1.upload.single("logo"), team_controller_1.teamControl.updateTeam);
+teamRouter.delete("/:id", team_controller_1.teamControl.removeTeam);
+teamRouter.get("/search/:name", team_controller_1.teamControl.searchTeam);
+teamRouter.get("/status/:id", team_controller_1.teamControl.teamStatus);
+exports.default = teamRouter;
