@@ -5,39 +5,106 @@ import { PlayerControl } from "../players/player.controller";
 import { MatchController } from "../matches/match.controller";
 import { MatchEventController } from "../match-events/macth-event.controller";
 import { teamControl } from "../teams/team.controller";
+import { reqAuth } from "../../middlewares/reqAuth";
+import { requireAdmin } from "../../middlewares/reqPermission";
 
 const route = Router();
 // teams
 route.post(
   "/team/create",
   upload.single("logo"),
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
   ManagerController.registerTeam
 );
-route.delete("/team/delete/:id", teamControl.removeTeam);
+route.delete(
+  "/team/delete/:id",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
+  teamControl.removeTeam
+);
 
 //matches
-route.post("/matches/create", MatchController.createMatches); // multiple creation
-route.post("/match/create", MatchController.createMatch); // single creation
-route.post("/generate/fixture", ManagerController.generateFixture);
-route.get("/matches/:id/tournament", MatchController.getMatches);
-route.post("/match/event/create", MatchEventController.addEvent);
-route.delete("/match/event/:id/delete", MatchEventController.deleteEvent);
-route.put("/match/:id/start", MatchController.startMatch);
-route.put("/match/:id/end", MatchController.endMatch);
-
+route.post(
+  "/matches/create",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
+  MatchController.createMatches
+); // multiple creation
+route.post(
+  "/match/create",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
+  MatchController.createMatch
+); // single creation
+route.post(
+  "/generate/fixture",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
+  ManagerController.generateFixture
+);
+route.get(
+  "/matches/:id/tournament",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
+  MatchController.getMatches
+);
+route.post(
+  "/match/event/create",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
+  MatchEventController.addEvent
+);
+route.put(
+  "/match/:id/start",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
+  MatchController.startMatch
+);
+route.put(
+  "/match/:id/end",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
+  MatchController.endMatch
+);
+route.delete(
+  "/match/event/:id/delete",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
+  MatchEventController.deleteEvent
+);
 //players
-route.post("/player/transfer", PlayerControl.transferPlayer);
-route.delete("/player/delete/:id", PlayerControl.deletePlayer);
+route.post(
+  "/player/transfer",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
+  PlayerControl.transferPlayer
+);
+route.delete(
+  "/player/delete/:id",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
+  PlayerControl.deletePlayer
+);
 route.post(
   "/player/create",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
   upload.single("playerPhoto"),
   PlayerControl.createPlayer
 );
 
 //gallery
-route.get("/gallery/:id/tournament", ManagerController.getGalleryOfTournament);
+route.get(
+  "/gallery/:id/tournament",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
+  ManagerController.getGalleryOfTournament
+);
 route.post(
   "/gallery/post",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
   upload.single("banner"),
   ManagerController.postToGallery
 );
@@ -45,15 +112,34 @@ route.post(
 //news
 route.post(
   "/news/create",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
   upload.single("banner"),
   ManagerController.postNewsToTournament
 );
 route.post(
   "/news/create",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
   upload.single("banner"),
   ManagerController.postNewsToTournament
 );
-route.delete("/news/delete/:id", ManagerController.deleteNews);
-route.post("/message/send", ManagerController.directMessage);
-route.get("/message/read/:id", ManagerController.getDirectMessages);
+route.delete(
+  "/news/delete/:id",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
+  ManagerController.deleteNews
+);
+route.post(
+  "/message/send",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
+  ManagerController.directMessage
+);
+route.get(
+  "/message/read/:id",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
+  ManagerController.getDirectMessages
+);
 export default route;
