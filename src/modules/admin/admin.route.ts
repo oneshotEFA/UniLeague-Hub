@@ -76,6 +76,8 @@ adminRouter.post(
   upload.single("image"),
   reqAuth,
   requireAdmin(["superAdmin"]),
+  "/news/create",
+  upload.single("image"),
   AdminControl.createNews
 );
 // Update news

@@ -224,25 +224,28 @@ export class AdminControl {
 
   // create news
   static async createNews(req: Request, res: Response) {
-    const data = req.body;
+    const { content } = req.body;
     const image = req.file;
+    let parsedContent: {
+      content: string;
+      title: string;
+      excerpt: string;
+      adminId: string;
+    };
 
-    const removeManager = await adminService.createNews(data, image);
-    if (!removeManager.ok) {
-      return res
-        .status(400)
-        .json(
-          new ApiResponseBuilder().badRequest(removeManager.error).build(res)
-        );
+    try {
+      parsedContent = JSON.parse(content);
+    } catch {
+      return res.status(400).json({ message: "Invalid content JSON" });
     }
-    return res
-      .status(200)
-      .json(
-        new ApiResponseBuilder()
-          .created("news is created")
-          .withData(removeManager.data)
-          .build(res)
-      );
+    const rese = await adminService.createNews(parsedContent, image);
+    if (!rese.ok) {
+      return new ApiResponseBuilder().badRequest(rese.error).build(res);
+    }
+    return new ApiResponseBuilder()
+      .created("news is created")
+      .withData(rese.data)
+      .build(res);
   }
 
   // update news

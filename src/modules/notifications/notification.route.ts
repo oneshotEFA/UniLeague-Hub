@@ -1,17 +1,17 @@
-import { NotificationController } from './notifcation.controller';
-import { Router } from 'express';
+import { NotificationController } from "./notifcation.controller";
+import { Router } from "express";
 
 const notficationRouter = Router();
 notficationRouter.get(
-  '/:id/admin',
+  "/:id/admin",
   NotificationController.getAdminNotification
 );
 notficationRouter.get(
-  '/:id/broadCass',
+  "/broadcast/:page",
   NotificationController.getBroadCastNotification
 );
 notficationRouter.get(
-  '/:id/tournament',
+  "/:id/tournament",
   NotificationController.getTournamentBroadCast
 );
 

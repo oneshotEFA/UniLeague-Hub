@@ -7,5 +7,7 @@ router.post("/signup", AuthController.signup);
 router.post("/login", AuthController.login);
 router.post("/user/update", AuthController.updateUser);
 router.get("/user/me/:id", AuthController.getMe);
+router.post("/changePassword", AuthController.changePassword);
+router.post("/player", AuthController.authPlayer);
 
 export default router;

@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { ApiResponseBuilder } from "../common/utils/ApiResponse";
-export const reqAuth = (req: Request, res: Response, next: NextFunction) => {
-  const jwtKey = process.env.ACCESS_SECRET || "";
+export const reqUser = (req: Request, res: Response, next: NextFunction) => {
+  const jwtKey = process.env.REGISTRATION_SECRET || "";
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return new ApiResponseBuilder().forbidden("No token provided").build(res);
