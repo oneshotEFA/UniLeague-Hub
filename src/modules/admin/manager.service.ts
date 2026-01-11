@@ -145,7 +145,9 @@ export class ManagerServices {
     const accessKey = generatePassword();
     const hashedAccessKey = bcrypt.hash(String(accessKey), 10);
     const registrationKey = (
-      (teamInfo.data?.team.teamName?.slice(0, 4) ?? "") + generatePassword()
+      (teamInfo.data?.team.teamName?.slice(0, 4) ?? "") +
+      generatePassword(4) +
+      Date.now().toString(36).slice(-4)
     ).toUpperCase();
     const expirationDate = getNextDaysRange(14);
     await this.prismaService.team.update({

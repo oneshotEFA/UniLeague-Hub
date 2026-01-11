@@ -73,7 +73,6 @@ adminRouter.delete(
 // Create news (image required)
 adminRouter.post(
   "/news/create",
-  upload.single("image"),
   reqAuth,
   requireAdmin(["superAdmin"]),
   upload.single("image"),
