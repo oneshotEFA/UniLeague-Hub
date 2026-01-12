@@ -366,4 +366,61 @@ export class ManagerServices {
       message: "deleted",
     };
   }
+  async resendCredential(id: string) {
+    try {
+      const teamInfo = await this.prismaService.team.findUnique({
+        where: { id },
+        include: {
+          tournaments: {
+            select: { tournament: { select: { tournamentName: true } } },
+          },
+        },
+      });
+      if (!teamInfo) {
+        return {
+          ok: false,
+          message: "Team is not even in the Database re register them",
+        };
+      }
+      const accessKey = generatePassword();
+      const hashedAccessKey = bcrypt.hash(String(accessKey), 10);
+      const registrationKey = (
+        (teamInfo.teamName?.slice(0, 4) ?? "") +
+        generatePassword(4) +
+        Date.now().toString(36).slice(-4)
+      ).toUpperCase();
+      const expirationDate = getNextDaysRange(14);
+      await this.prismaService.team.update({
+        where: { id: teamInfo.id },
+        data: {
+          registrationKey,
+          expiredRegistration: expirationDate.end,
+          accessKey: String(hashedAccessKey),
+        },
+      });
+      const res = await notificationService.sendEmailToCoach({
+        registrationKey: String(registrationKey),
+        recipientName: teamInfo.coachName || "",
+        accessKey: String(accessKey),
+        email: teamInfo.coachEmail || "",
+        tournamentName: teamInfo.tournaments[0].tournament.tournamentName,
+        teamName: teamInfo.teamName,
+      });
+      if (!res.success) {
+        return {
+          ok: true,
+          message: res.message,
+        };
+      }
+      return {
+        ok: true,
+        message: "under process",
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        message: "smtg just happen",
+      };
+    }
+  }
 }

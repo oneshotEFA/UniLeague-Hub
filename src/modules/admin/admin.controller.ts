@@ -149,16 +149,11 @@ export class AdminControl {
     if (!manager.ok) {
       return res
         .status(400)
-        .json(new ApiResponseBuilder().badRequest(manager.error).build(res));
+        .json(new ApiResponseBuilder().badRequest(manager.message).build(res));
     }
     return res
       .status(200)
-      .json(
-        new ApiResponseBuilder()
-          .created("manager assigned")
-          .withData(manager.data)
-          .build(res)
-      );
+      .json(new ApiResponseBuilder().ok("manager assigned").build(res));
   }
 
   // get tournament managers
@@ -364,6 +359,27 @@ export class AdminControl {
     const logs = await adminService.markRead(id);
     if (!logs) {
       return new ApiResponseBuilder().badRequest("smtg wrong").build(res);
+    }
+    return new ApiResponseBuilder().ok(logs.message).build(res);
+  }
+  static async createManager(req: Request, res: Response) {
+    const { username, fullName, email, tournamentId } = req.body;
+    const logs = await adminService.createManager(
+      username,
+      fullName,
+      email,
+      tournamentId
+    );
+    if (!logs.ok) {
+      return new ApiResponseBuilder().badRequest(logs.message).build(res);
+    }
+    return new ApiResponseBuilder().ok(logs.message).build(res);
+  }
+  static async resendCredential(req: Request, res: Response) {
+    const { adminId, tournamentName } = req.body;
+    const logs = await adminService.resendCredential(adminId, tournamentName);
+    if (!logs.ok) {
+      return new ApiResponseBuilder().badRequest(logs.message).build(res);
     }
     return new ApiResponseBuilder().ok(logs.message).build(res);
   }

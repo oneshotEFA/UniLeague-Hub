@@ -20,6 +20,18 @@ adminRouter.get(
   requireAdmin(["superAdmin"]),
   AdminControl.getTournamentManagers
 );
+adminRouter.post(
+  "/manager/create",
+  reqAuth,
+  requireAdmin(["superAdmin"]),
+  AdminControl.createManager
+);
+adminRouter.post(
+  "/manager/mail/resend",
+  reqAuth,
+  requireAdmin(["superAdmin"]),
+  AdminControl.resendCredential
+);
 
 adminRouter.post(
   "/create",

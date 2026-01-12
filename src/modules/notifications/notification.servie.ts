@@ -716,6 +716,7 @@ export class NotificationService {
 
       return {
         success: info.accepted.includes(email),
+        message: info.response,
       };
     } catch (error) {
       throw new Error(`SendEmail failed: ${(error as Error).message}`);
@@ -746,6 +747,7 @@ export class NotificationService {
 
       return {
         success: info.accepted.includes(email),
+        message: info.response,
       };
     } catch (error) {
       throw new Error(`SendEmailToCoach failed: ${(error as Error).message}`);

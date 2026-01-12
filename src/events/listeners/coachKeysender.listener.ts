@@ -12,7 +12,10 @@ eventBus.on(REGISTIRATION_KEY, async (payload: CoachCredentials) => {
   await withRetry(
     async () => {
       console.log("start sending email");
-      await notificationService.sendEmailToCoach(payload);
+      const res = await notificationService.sendEmailToCoach(payload);
+      if (!res.success) {
+        throw new Error(res.message);
+      }
       console.log("Email sent");
     },
     {

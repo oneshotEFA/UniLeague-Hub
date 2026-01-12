@@ -142,4 +142,13 @@ route.get(
   requireAdmin(["tournamentManager"]),
   ManagerController.getDirectMessages
 );
+
+//mail
+
+route.post(
+  "/mail/resend/:id",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
+  ManagerController.resendCredential
+);
 export default route;
