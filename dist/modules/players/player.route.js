@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const player_controller_1 = require("./player.controller");
+const multer_1 = require("../../middlewares/multer");
+const reqUser_1 = require("../../middlewares/reqUser");
+const playerRouter = (0, express_1.Router)();
+playerRouter.post("/create", reqUser_1.reqUser, multer_1.upload.single("playerPhoto"), player_controller_1.PlayerControl.createPlayer);
+playerRouter.get("/:teamId/team", player_controller_1.PlayerControl.getPlayers);
+playerRouter.get("/search/:name", player_controller_1.PlayerControl.getPlayerByName);
+playerRouter.get("/:id/player", player_controller_1.PlayerControl.getPlayerById);
+playerRouter.post("/transfer", player_controller_1.PlayerControl.transferPlayer);
+exports.default = playerRouter;

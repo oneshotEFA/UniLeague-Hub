@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const macth_event_controller_1 = require("./macth-event.controller");
+const route = (0, express_1.Router)();
+route.post("/create", macth_event_controller_1.MatchEventController.addEvent);
+route.delete("/:id/delete", macth_event_controller_1.MatchEventController.deleteEvent);
+route.get("/:id/team", macth_event_controller_1.MatchEventController.getEventsByTeam);
+route.delete("/:id/match", macth_event_controller_1.MatchEventController.getEventsByMatch);
+exports.default = route;

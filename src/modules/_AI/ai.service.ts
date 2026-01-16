@@ -310,11 +310,7 @@ export class AiService {
         data: Number(power),
       };
     } catch (error) {
-      return {
-        ok: false,
-        data: null,
-        error: (error as Error).message,
-      };
+      throw new Error(`Generating Error: ${(error as Error).message}`);
     }
   }
   static async predictMatchOutcome(matchId: string) {

@@ -18,11 +18,8 @@ eventBus.on(
           title: string;
           excerpt: string;
         } = await AiService.generateAnnouncement(payload);
-        console.log(message);
-        const res = await notification.broadCastToWeb(message);
-        if (!res.ok) {
-          throw res.error;
-        }
+
+        await notification.broadCastToWeb(message);
       },
       { retries: 5, onFail: async () => {}, onRecover: async () => {} }
     );

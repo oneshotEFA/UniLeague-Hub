@@ -8,19 +8,15 @@ eventBus.on(
   async (payload: { homeTeamId: string; awayTeamId: string }) => {
     await withRetry(
       async () => {
-        await AiService.generateTeamPower(payload.awayTeamId);
-        await AiService.generateTeamPower(payload.homeTeamId);
+        const res = await AiService.generateTeamPower(payload.awayTeamId);
+        const res1 = await AiService.generateTeamPower(payload.homeTeamId);
+        if (!res.ok || !res1.ok) {
+          throw Error(res.error);
+        }
       },
       {
         retries: 5,
-        onFail: async (error) => {
-          console.error("Failed to update power of team:", payload, error);
-          if (!isRecoverable(error)) {
-            // notificationService.systemCall()
-          }
-          //analysis the error and return the data
-          // notificationService.systemCall()
-        },
+        onFail: async (error) => {},
         onRecover: async () => {},
       }
     );

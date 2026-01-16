@@ -494,10 +494,7 @@ export class NotificationService {
         data: broadCast,
       };
     } catch (error: any) {
-      return {
-        ok: false,
-        error: error.message,
-      };
+      throw new Error(`News failed: ${(error as Error).message}`);
     }
   }
 
@@ -674,7 +671,7 @@ export class NotificationService {
 
       return { ok: true, message: "Maintenance email sent successfully!" };
     } catch (error: any) {
-      return { ok: false, error: error.message };
+      throw new Error(`SendEmail failed: ${(error as Error).message}`);
     }
   }
   async markReadMessage(id: string) {
@@ -719,9 +716,10 @@ export class NotificationService {
 
       return {
         success: info.accepted.includes(email),
+        message: info.response,
       };
     } catch (error) {
-      return false;
+      throw new Error(`SendEmail failed: ${(error as Error).message}`);
     }
   }
   async sendEmailToCoach(credentials: CoachCredentials) {
@@ -749,9 +747,10 @@ export class NotificationService {
 
       return {
         success: info.accepted.includes(email),
+        message: info.response,
       };
     } catch (error) {
-      return { success: false };
+      throw new Error(`SendEmailToCoach failed: ${(error as Error).message}`);
     }
   }
 }

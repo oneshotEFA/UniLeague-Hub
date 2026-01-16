@@ -11,12 +11,12 @@ const notificationService = new NotificationService(prisma, gallery);
 eventBus.on(REGISTIRATION_KEY, async (payload: CoachCredentials) => {
   await withRetry(
     async () => {
+      console.log("start sending email");
       const res = await notificationService.sendEmailToCoach(payload);
-      if (!res) {
-        console.log(res, "error");
-        throw error;
+      if (!res.success) {
+        throw new Error(res.message);
       }
-      console.log("sent");
+      console.log("Email sent");
     },
     {
       retries: 3,

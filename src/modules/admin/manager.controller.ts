@@ -216,4 +216,23 @@ export class ManagerController {
         .build(res);
     }
   }
+  static async resendCredential(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const result = await managerService.resendCredential(id);
+
+      if (!result.ok) {
+        return new ApiResponseBuilder()
+          .badRequest("no result from the api")
+          .build(res);
+      }
+
+      return new ApiResponseBuilder().ok(result.message).build(res);
+    } catch (error) {
+      console.error(error);
+      return new ApiResponseBuilder()
+        .internalError("Internal server error")
+        .build(res);
+    }
+  }
 }

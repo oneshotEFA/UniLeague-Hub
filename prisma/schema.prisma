@@ -64,6 +64,33 @@ enum ImageUsage {
   LOGO       // team logo
   BANNER     // header images
 }
+enum LineupRole {
+  STARTING
+  BENCH
+}
+
+enum LineupReq {
+  WAITING
+  REQUESTED
+  APPROVED
+  REJECTED
+}
+enum PlayerPosition {
+  GK
+  RB
+  RCB
+  LCB
+  LB
+  CDM
+  CM
+  CM01
+  CM02
+  CAM
+  RW
+  LW
+  ST
+  ST01
+}
 
 
 // --------------------
@@ -80,6 +107,7 @@ model Admin {
   refreshToken String?
   role      AdminRole @default(tournamentManager)
   isActive  Boolean   @default(true)
+  approvedLineup MatchLineup[]  @relation("ApprovedLineup")
 
   tournaments           Tournament[]  @relation("ManagedTournaments")
   sentNotifications     Notification[] @relation("Sender")
@@ -101,6 +129,7 @@ model Player {
   team      Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
   events    MatchEvent[]
   goalScore GoalScorer[]
+  lineup    MatchLineupPlayer[]
 
   @@unique([teamId, number])
   @@index([teamId])
@@ -115,15 +144,17 @@ model Team {
   coachEmail  String?
   power Int @default(0)
   registrationKey String? @unique
-  accessKey String?       @unique
+  accessKey String?     
   expiredRegistration DateTime?
 //relation
   players      Player[]
   matchEvent   MatchEvent[]
   homeMatches  Match[]    @relation("HomeTeam")
   awayMatches  Match[]    @relation("AwayTeam")
+  requestLineup   MatchLineup[]   @relation("RequestedLineup")
   standings     TournamentStanding[] 
   tournaments  TournamentTeam[]
+  teamlineup    MatchLineup[]
 }
 
 
@@ -207,6 +238,7 @@ model Match {
   goalScore     GoalScorer[]
 
   matchStats    MatchStats?
+  matchlineup   MatchLineup[]
   @@unique([homeTeamId, awayTeamId, scheduledDate])
 
   @@index([tournamentId])
@@ -349,4 +381,53 @@ model TournamentStanding {
   @@unique([tournamentId, teamId]) // A team can't have 2 records in same tournament
 
   @@index([tournamentId])
+}
+model MatchLineup {
+  id        String   @id @default(uuid())
+  matchId   String
+  teamId    String
+
+  formation String?
+  state   LineupReq  @default(WAITING) 
+
+  submittedAt DateTime?
+  approvedAt  DateTime?
+  requestedById String
+approvedById  String?
+
+requestedBy Team      @relation("RequestedLineup", fields: [requestedById], references: [id])
+approvedBy  Admin?    @relation("ApprovedLineup", fields: [approvedById], references: [id])
+
+
+  createdAt DateTime @default(now())
+
+  match     Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  team      Team  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  players   MatchLineupPlayer[]
+
+  @@unique([matchId, teamId])
+  @@index([matchId])
+  @@index([teamId])
+}
+model MatchLineupPlayer {
+  id        String @id @default(uuid())
+  lineupId String
+  playerId String
+
+  position PlayerPosition
+
+  role      LineupRole
+  isCaptain Boolean @default(false)
+  
+
+  // Match-specific state
+  isActive  Boolean @default(true)   // false after red card / substitution
+  minuteIn  Int?                    // substitution in
+  minuteOut Int?                    // substitution out
+
+  lineup    MatchLineup @relation(fields: [lineupId], references: [id], onDelete: Cascade)
+  player    Player      @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([lineupId, playerId])
 }

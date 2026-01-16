@@ -1,0 +1,596 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TournamentService = void 0;
+const db_config_1 = require("../../config/db.config");
+const event_bus_1 = require("../../events/event-bus");
+const events_1 = require("../../events/events");
+class TournamentService {
+    constructor(prismaService = db_config_1.prisma, galleryService) {
+        this.prismaService = prismaService;
+        this.galleryService = galleryService;
+    }
+    async getTournaments() {
+        try {
+            const res = await this.prismaService.tournament.findMany({});
+            if (!res || res.length === 0) {
+                return {
+                    ok: false,
+                    error: "No tournaments found in this calendar year",
+                };
+            }
+            const data = await Promise.all(res.map(async (tournament) => {
+                const logo = await this.galleryService.getImagesByOwner("TOURNAMENT", tournament.id, "LOGO");
+                return {
+                    ...tournament,
+                    logoUrl: logo[0]?.url,
+                };
+            }));
+            return {
+                ok: true,
+                data,
+            };
+        }
+        catch (error) {
+            return {
+                ok: false,
+                error: error instanceof Error ? error.message : "Unknown error",
+            };
+        }
+    }
+    async getTournament(id) {
+        try {
+            const res = await this.prismaService.tournament.findFirst({
+                where: { id },
+            });
+            if (!res) {
+                return {
+                    ok: false,
+                    error: "smtg went wrong",
+                };
+            }
+            const data = await Promise.all(await this.galleryService.getImagesByOwner("TOURNAMENT", res.id, "LOGO"));
+            const teamCount = await this.prismaService.tournamentTeam.count({
+                where: { tournamentId: id },
+            });
+            const playerCount = await this.prismaService.player.count({
+                where: {
+                    team: {
+                        tournaments: {
+                            some: { tournamentId: id },
+                        },
+                    },
+                },
+            });
+            return {
+                ok: true,
+                data: { ...res, logoUrl: data[0]?.url, teamCount, playerCount },
+            };
+        }
+        catch (error) {
+            return {
+                ok: false,
+                error: error instanceof Error ? error.message : "Unknown error",
+            };
+        }
+    }
+    async createTournament(data) {
+        try {
+            const { logo, ...tournamentData } = data;
+            const res = await this.prismaService.tournament.create({
+                data: tournamentData,
+                select: {
+                    id: true,
+                    tournamentName: true,
+                    startingDate: true,
+                    description: true,
+                    sponsor: true,
+                    manager: { select: { fullName: true } },
+                },
+            });
+            const logos = await this.galleryService.savePicture(data.logo.buffer, res.id, "TOURNAMENT", "LOGO", true);
+            let message = "Tournament created successfully";
+            event_bus_1.eventBus.emit(events_1.TOURNAMENT_ANNOUNCEMENT, {
+                name: res.tournamentName,
+                startDate: res.startingDate,
+                organizer: res.sponsor,
+                extraInfo: res.description,
+            });
+            if (!logos.ok)
+                message = "Tournament created but logo upload failed";
+            return {
+                ok: true,
+                data: res,
+                message,
+            };
+        }
+        catch (error) {
+            return {
+                ok: false,
+                error: error instanceof Error ? error.message : "Unknown error",
+            };
+        }
+    }
+    async deleteTournament(id) {
+        try {
+            const res = await this.prismaService.tournament.delete({ where: { id } });
+            const logo = await this.prismaService.mediaGallery.findFirst({
+                where: { ownerId: id, ownerType: "TOURNAMENT", usage: "LOGO" },
+                select: { publicId: true },
+            });
+            if (!logo?.publicId)
+                return { ok: true, data: res };
+            await this.galleryService.deleteImage(logo?.publicId);
+            return {
+                ok: true,
+                data: res, // Optionally return the deleted tournament
+            };
+        }
+        catch (error) {
+            return {
+                ok: false,
+                error: error instanceof Error ? error.message : "Unknown error",
+            };
+        }
+    }
+    async updateTournament(data) {
+        try {
+            const { id, logo, ...update } = data;
+            // Validate tournament exists first
+            const existing = await this.prismaService.tournament.findUnique({
+                where: { id },
+            });
+            if (!existing) {
+                return {
+                    ok: false,
+                    error: "Tournament not found",
+                };
+            }
+            if (logo) {
+                const existingLogo = await this.prismaService.mediaGallery.findFirst({
+                    where: { ownerId: id },
+                    select: { id: true, publicId: true },
+                });
+                await this.galleryService.savePicture(logo.buffer, id, "TOURNAMENT", "LOGO", true);
+                if (existingLogo?.publicId) {
+                    await this.galleryService.deleteImage(existingLogo.publicId);
+                    await this.prismaService.mediaGallery.delete({
+                        where: { id: existingLogo.id },
+                    });
+                }
+            }
+            const filteredUpdate = this.cleanData(update);
+            // Optional: Add business logic validation
+            if (filteredUpdate.startingDate && filteredUpdate.endingDate) {
+                if (new Date(filteredUpdate.startingDate) >
+                    new Date(filteredUpdate.endingDate)) {
+                    return {
+                        ok: false,
+                        error: "Starting date cannot be after ending date",
+                    };
+                }
+            }
+            const res = await this.prismaService.tournament.update({
+                where: { id },
+                data: filteredUpdate,
+            });
+            return {
+                ok: true,
+                data: res,
+            };
+        }
+        catch (error) {
+            return {
+                ok: false,
+                error: error instanceof Error ? error.message : "Unknown error",
+            };
+        }
+    }
+    async addTeamToTournament(tournamentId, teamId) {
+        try {
+            // 1. Validate tournament
+            const tournament = await db_config_1.prisma.tournament.findUnique({
+                where: { id: tournamentId },
+            });
+            if (!tournament) {
+                return { ok: false, message: "Tournament not found", data: null };
+            }
+            // 2. Validate team
+            const team = await db_config_1.prisma.team.findUnique({
+                where: { id: teamId },
+            });
+            if (!team) {
+                return { ok: false, message: "Team not found", data: null };
+            }
+            // 3. Prevent duplicates
+            const existing = await db_config_1.prisma.tournamentTeam.findFirst({
+                where: { tournamentId, teamId },
+            });
+            if (existing) {
+                return {
+                    ok: false,
+                    message: "Team already added to this tournament",
+                    data: null,
+                };
+            }
+            // 4. Insert the team into the tournament
+            const tt = await db_config_1.prisma.tournamentTeam.create({
+                data: { tournamentId, teamId },
+                select: {
+                    tournament: {
+                        select: {
+                            tournamentName: true,
+                        },
+                    },
+                },
+            });
+            return {
+                ok: true,
+                message: "Team successfully added to tournament",
+                data: tt,
+            };
+        }
+        catch (error) {
+            console.error(error);
+            return { ok: false, message: "Something went wrong", data: null };
+        }
+    }
+    async removeTeamFromTournament(tournamentId, teamId) {
+        try {
+            // 1. Check if the team is part of the tournament
+            const member = await db_config_1.prisma.tournamentTeam.findFirst({
+                where: { tournamentId, teamId },
+            });
+            if (!member) {
+                return { ok: false, message: "Team is not part of this tournament" };
+            }
+            const matches = await db_config_1.prisma.match.findFirst({
+                where: {
+                    tournamentId,
+                    OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }],
+                },
+            });
+            if (matches) {
+                return {
+                    ok: false,
+                    message: "Cannot remove team — team already has scheduled or played matches.",
+                };
+            }
+            await db_config_1.prisma.tournamentStanding.deleteMany({
+                where: { tournamentId, teamId },
+            });
+            await db_config_1.prisma.tournamentTeam.delete({
+                where: { id: member.id },
+            });
+            return { ok: true, message: "Team removed successfully from tournament" };
+        }
+        catch (error) {
+            console.error(error);
+            return { ok: false, message: "Something went wrong while removing team" };
+        }
+    }
+    async getTournamentTeams(tournamentId) {
+        try {
+            const teams = await this.prismaService.tournamentTeam.findMany({
+                where: { tournamentId },
+                select: { team: true, teamId: true, id: true },
+            });
+            const data = await Promise.all(teams.map(async (team) => {
+                const logo = await this.galleryService.getImagesByOwner("TEAM", team.teamId);
+                const count = await this.prismaService.player.count({
+                    where: { teamId: team.teamId },
+                });
+                return {
+                    ...team,
+                    playerCount: count,
+                    logo,
+                };
+            }));
+            if (teams.length === 0) {
+                return {
+                    ok: false,
+                    error: "No team found",
+                };
+            }
+            return {
+                ok: true,
+                data,
+            };
+        }
+        catch (error) {
+            return {
+                ok: false,
+                error: error instanceof Error ? error.message : "Unknown error",
+            };
+        }
+    }
+    async generateFixtures(tournamentId) {
+        try {
+            const teams = await this.prismaService.tournamentTeam.findMany({
+                where: { tournamentId },
+            });
+            if (teams.length === 0) {
+                return {
+                    ok: false,
+                    error: "No team found",
+                };
+            }
+            //assuming Ai module give a function to generate fixture like this <|>
+            //const fixtureMatches= await this.AiService.generateFixture(teams);
+            var fixtureMatches;
+            //return the fixture to admin to view it and match module handle creating the match
+            return {
+                ok: true,
+                data: "fixtureMatches",
+            };
+        }
+        catch (error) {
+            return {
+                ok: false,
+                error: error instanceof Error ? error.message : "Unknown error",
+            };
+        }
+    }
+    async getTournamentFixtures(tournamentId) {
+        try {
+            const matches = await this.prismaService.match.findMany({
+                where: { tournamentId },
+                orderBy: { matchWeek: "asc" },
+            });
+            if (matches.length === 0) {
+                return {
+                    ok: false,
+                    error: "No matches found",
+                };
+            }
+            return {
+                ok: true,
+                data: matches,
+            };
+        }
+        catch (error) {
+            return {
+                ok: false,
+                error: error instanceof Error ? error.message : "Unknown error",
+            };
+        }
+    }
+    async updateStandings(match) {
+        try {
+            const { tournamentId, homeTeamId, awayTeamId, homeScore, awayScore } = match;
+            await this.updateTeamStanding(tournamentId, homeTeamId, homeScore, awayScore);
+            await this.updateTeamStanding(tournamentId, awayTeamId, awayScore, homeScore);
+            return { ok: true, data: "Standings updated" };
+        }
+        catch (error) {
+            return {
+                ok: false,
+                error: error instanceof Error ? error.message : "Unknown error",
+            };
+        }
+    }
+    async getTournamentStandings(tournamentId) {
+        try {
+            const standing = await this.prismaService.tournamentStanding.findMany({
+                where: { tournamentId },
+                include: { team: { select: { teamName: true } } },
+                orderBy: { points: "desc" },
+            });
+            if (!standing)
+                return { ok: false, error: "not found" };
+            return {
+                ok: true,
+                data: standing,
+            };
+        }
+        catch (error) {
+            return {
+                ok: false,
+                error: error instanceof Error ? error.message : "Unknown error",
+            };
+        }
+    }
+    async closeTournament(id) {
+        try {
+            await this.prismaService.tournament.update({
+                where: { id },
+                data: { status: "COMPLETED" },
+            });
+            return {
+                ok: true,
+                data: "finished",
+            };
+        }
+        catch (error) {
+            return {
+                ok: false,
+                error: error instanceof Error ? error.message : "Unknown error",
+            };
+        }
+    }
+    async getTournamentSummary(tournamentId) { }
+    async updateTeamStanding(tournamentId, teamId, goalsFor, goalsAgainst) {
+        const row = await db_config_1.prisma.tournamentStanding.findFirst({
+            where: { tournamentId, teamId },
+        });
+        if (!row)
+            throw new Error("Standing row not found");
+        const updateData = {
+            played: row.played + 1,
+            goalsFor: row.goalsFor + goalsFor,
+            goalsAgainst: row.goalsAgainst + goalsAgainst,
+        };
+        updateData.goalDifference = updateData.goalsFor - updateData.goalsAgainst;
+        if (goalsFor > goalsAgainst) {
+            updateData.wins = row.wins + 1;
+            updateData.points = row.points + 3;
+        }
+        else if (goalsFor === goalsAgainst) {
+            updateData.draws = row.draws + 1;
+            updateData.points = row.points + 1;
+        }
+        else {
+            updateData.losses = row.losses + 1;
+        }
+        await db_config_1.prisma.tournamentStanding.update({
+            where: { id: row.id },
+            data: updateData,
+        });
+    }
+    cleanData(update) {
+        return Object.fromEntries(Object.entries(update).filter(([_, v]) => v !== undefined));
+    }
+    async initTournamentStanding(tournamentId) {
+        try {
+            const teams = await this.prismaService.tournamentTeam.findMany({
+                where: { tournamentId: tournamentId },
+                select: { teamId: true },
+            });
+            const res = await Promise.all(teams.map(async (team) => {
+                try {
+                    return await this.initStanding(team.teamId, tournamentId);
+                }
+                catch (err) {
+                    return { ok: false, error: err.message };
+                }
+            }));
+            const success = res.filter((r) => r.ok);
+            const failed = res.filter((r) => !r.ok);
+            return { ok: true, data: { success, failed } };
+        }
+        catch (error) {
+            return {
+                ok: false,
+                error: error,
+            };
+        }
+    }
+    async initStanding(teamId, tournamentId) {
+        try {
+            const res = await this.prismaService.tournamentStanding.upsert({
+                where: { tournamentId_teamId: { tournamentId, teamId } },
+                update: {},
+                create: { tournamentId, teamId },
+            });
+            return { ok: true, data: res.id };
+        }
+        catch (error) {
+            return {
+                ok: false,
+                error: error,
+            };
+        }
+    }
+    async resetTournamentStandings(tournamentId) {
+        try {
+            return await this.prismaService.$transaction(async (tx) => {
+                // 1. Ensure tournament exists
+                const tournament = await tx.tournament.findUnique({
+                    where: { id: tournamentId },
+                    select: { id: true },
+                });
+                if (!tournament) {
+                    return { ok: false, error: "Tournament not found" };
+                }
+                // 2. Get registered teams (IMPORTANT)
+                const teams = await tx.tournamentTeam.findMany({
+                    where: { tournamentId },
+                    select: { teamId: true },
+                });
+                if (teams.length === 0) {
+                    return { ok: false, error: "No teams registered in tournament" };
+                }
+                // 3. Delete existing standings
+                await tx.tournamentStanding.deleteMany({
+                    where: { tournamentId },
+                });
+                // 4. Recreate standings (defaults = 0)
+                await tx.tournamentStanding.createMany({
+                    data: teams.map((t) => ({
+                        tournamentId,
+                        teamId: t.teamId,
+                    })),
+                    skipDuplicates: true,
+                });
+                return {
+                    ok: true,
+                    data: {
+                        tournamentId,
+                        teamsCount: teams.length,
+                    },
+                };
+            });
+        }
+        catch (error) {
+            return {
+                ok: false,
+                error,
+            };
+        }
+    }
+    async getPlayersByTournament(tournamentId) {
+        try {
+            const teams = await this.prismaService.tournamentTeam.findMany({
+                where: { tournamentId },
+                select: {
+                    team: {
+                        select: {
+                            id: true,
+                            teamName: true,
+                            players: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    position: true,
+                                    number: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+            return {
+                ok: true,
+                data: teams,
+            };
+        }
+        catch (error) {
+            return {
+                ok: false,
+                message: "Failed to fetch players",
+            };
+        }
+    }
+    // get all tournamets status
+    async getDashboardStats() {
+        try {
+            const totalTournaments = await this.prismaService.tournament.count();
+            const activeTournaments = await this.prismaService.tournament.count({
+                where: { status: "ONGOING" },
+            });
+            const finishedTournaments = await this.prismaService.tournament.count({
+                where: { status: "COMPLETED" },
+            });
+            const totalTeams = await this.prismaService.team.count();
+            const totalPlayers = await this.prismaService.player.count();
+            const totalManagers = await this.prismaService.admin.count();
+            return {
+                ok: true,
+                data: {
+                    totalTournaments,
+                    activeTournaments,
+                    finishedTournaments,
+                    totalTeams,
+                    totalPlayers,
+                    totalManagers,
+                },
+            };
+        }
+        catch (error) {
+            return {
+                ok: false,
+                error: error instanceof Error ? error.message : "Unknown error",
+            };
+        }
+    }
+}
+exports.TournamentService = TournamentService;

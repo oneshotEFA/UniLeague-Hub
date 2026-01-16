@@ -5,7 +5,9 @@ import { UpdateTournament } from "../tournaments/utility";
 import { NotificationService } from "../notifications/notification.servie";
 import { AuthService } from "../auth/auth.service";
 import { generatePassword } from "./utility";
-
+import bcrypt from "bcryptjs";
+import { eventBus } from "../../events/event-bus";
+import { TOURNAMENT_MANAGER_NOTIFICATION } from "../../events/events";
 interface NewsContent {
   type: string;
   content: string;
@@ -161,46 +163,77 @@ export class AdminService {
   }
 
   // assing manager to tournament
-  async assignManagerToTournament(managerId: string, tournamentId: string) {
+  async assignManagerToTournament(
+    managerId: string,
+    tournamentId: string,
+    password?: string
+  ) {
     try {
       if (!managerId || !tournamentId) {
         return {
           ok: false,
-          error: "Both id is required",
+          message: "Both id is required",
         };
       }
       const tournament = await this.prismaService.tournament.findUnique({
         where: { id: tournamentId },
+        select: { tournamentName: true },
       });
 
       if (!tournament) {
         return {
           ok: false,
-          error: "no tournament by this id",
+          message: "no tournament by this id",
         };
       }
       const manager = await this.prismaService.admin.findUnique({
         where: { id: managerId },
+        select: { email: true, username: true },
       });
       if (!manager) {
         return {
           ok: false,
-          error: "no manager in this",
+          message: "no manager in this",
         };
       }
-      const assignManager = await this.prismaService.tournament.update({
+      await this.prismaService.tournament.update({
         where: { id: tournamentId },
         data: { managerId: managerId },
       });
-
+      console.log(" assigned");
+      if (password) {
+        eventBus.emit(TOURNAMENT_MANAGER_NOTIFICATION, {
+          credential: {
+            email: manager.email,
+            username: manager.username,
+            temporaryPassword: password,
+          },
+          tName: tournament.tournamentName,
+        });
+        console.log("under process");
+        return {
+          ok: true,
+          message: "under process",
+        };
+      }
+      const res = await this.resendCredential(
+        managerId,
+        tournament.tournamentName
+      );
+      if (!res.ok) {
+        return {
+          ok: false,
+          message: res.message,
+        };
+      }
       return {
         ok: true,
-        data: assignManager,
+        message: "assignManager",
       };
     } catch (error: any) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "unexpected error",
+        message: error instanceof Error ? error.message : "unexpected error",
       };
     }
   }
@@ -582,7 +615,12 @@ export class AdminService {
   async markRead(id: string) {
     return await this.notificationService.markReadMessage(id);
   }
-  async createManager(username: string, fullName: string, email: string) {
+  async createManager(
+    username: string,
+    fullName: string,
+    email: string,
+    tournamentId: string
+  ) {
     const password = generatePassword.toString();
     const res = await this.authService.signup(
       username,
@@ -596,7 +634,19 @@ export class AdminService {
         message: "i have no idea why this happen to u",
       };
     }
-    if (!res.ok) {
+    if (!res.ok || res.data?.id === undefined) {
+      return {
+        ok: false,
+        message: res.error,
+      };
+    }
+    console.log("about to assigned");
+    const assign = await this.assignManagerToTournament(
+      res.data?.id,
+      tournamentId,
+      password
+    );
+    if (!assign.ok) {
       return {
         ok: false,
         message: res.error,
@@ -604,7 +654,42 @@ export class AdminService {
     }
     return {
       ok: true,
-      data: { password, managerId: res.data?.id },
+      message: "created and assigned to tournament",
+    };
+  }
+  async resendCredential(adminId: string, tournamentName?: string) {
+    const password = generatePassword();
+    const user = await this.prismaService.admin.findUnique({
+      where: { id: adminId },
+    });
+    if (!user) {
+      return {
+        ok: false,
+        message: "no admin found",
+      };
+    }
+    const hashed = await bcrypt.hash(String(password), 10);
+    await this.prismaService.admin.update({
+      where: { id: user.id },
+      data: { password: hashed },
+    });
+    const res = await this.notificationService.sendEmailToManager(
+      {
+        email: user.email,
+        username: user.username,
+        temporaryPassword: String(password),
+      },
+      tournamentName ?? "Not Defined"
+    );
+    if (!res.success) {
+      return {
+        ok: false,
+        message: res.message,
+      };
+    }
+    return {
+      ok: true,
+      message: "sent",
     };
   }
 }

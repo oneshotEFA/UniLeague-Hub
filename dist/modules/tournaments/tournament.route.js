@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const tournament_controller_1 = require("./tournament.controller");
+const router = (0, express_1.Router)();
+router.get('/dashBoard', tournament_controller_1.TournamentController.dashBoardStatus);
+router.get('/', tournament_controller_1.TournamentController.getTournaments);
+router.get('/:id', tournament_controller_1.TournamentController.getTournament);
+router.get('/:tournamentId/init', tournament_controller_1.TournamentController.initTournamentStanding);
+router.get('/:tournamentId/teams', tournament_controller_1.TournamentController.getTournamentTeams);
+router.get('/:tournamentId/matches', tournament_controller_1.TournamentController.getTournamentFixtures);
+router.get('/:tournamentId/standings', tournament_controller_1.TournamentController.getTournamentStandings);
+router.get('/:tournamentId/players', tournament_controller_1.TournamentController.getPlayersByTournament);
+exports.default = router;
