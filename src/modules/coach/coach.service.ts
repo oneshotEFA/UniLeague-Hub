@@ -13,7 +13,7 @@ export class CoachService {
       position: PlayerPosition;
       role: LineupRole;
       isCaptain?: boolean;
-    }[]
+    }[],
   ) {
     const match = await this.prismaService.match.findFirst({
       where: {
@@ -102,23 +102,14 @@ export class CoachService {
       message: "Line-Up Requested Successfully",
     };
   }
-  async lineUpHistory(teamId: string) {
-    const data = this.prismaService.matchLineup.findMany({
+  async lineUpPlayers(matchId: string, teamId: string) {
+    const data = await this.prismaService.matchLineup.findFirst({
       where: {
+        matchId,
         teamId,
-      },
-      orderBy: {
-        createdAt: "desc",
+        state: "APPROVED",
       },
       include: {
-        match: {
-          select: {
-            id: true,
-            scheduledDate: true,
-            homeTeam: { select: { teamName: true } },
-            awayTeam: { select: { teamName: true } },
-          },
-        },
         players: {
           include: {
             player: {
@@ -130,10 +121,42 @@ export class CoachService {
             },
           },
         },
-        approvedBy: {
-          select: {
-            id: true,
-            username: true,
+      },
+    });
+    if (!data) {
+      return {
+        ok: false,
+        message: "No Line-Up History Found",
+        data: null,
+      };
+    }
+
+    return {
+      ok: true,
+      message: "fetched Line-Up History",
+      data: {
+        starting: data.players.filter((player) => player.role === "STARTING"),
+        bench: data.players.filter((player) => player.role === "BENCH"),
+      },
+    };
+  }
+  async gteLineUpRequest(matchId: string, teamId: string) {
+    const data = await this.prismaService.matchLineup.findFirst({
+      where: {
+        matchId,
+        teamId,
+        state: "REQUESTED",
+      },
+      include: {
+        players: {
+          include: {
+            player: {
+              select: {
+                id: true,
+                name: true,
+                number: true,
+              },
+            },
           },
         },
       },
@@ -145,10 +168,14 @@ export class CoachService {
         data: null,
       };
     }
+
     return {
       ok: true,
       message: "fetched Line-Up History",
-      data,
+      data: {
+        starting: data.players.filter((player) => player.role === "STARTING"),
+        bench: data.players.filter((player) => player.role === "BENCH"),
+      },
     };
   }
 }

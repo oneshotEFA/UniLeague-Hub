@@ -26,7 +26,7 @@ export class CoachController {
         matchId,
         formation,
         requestById,
-        players
+        players,
       );
 
       if (!response.ok) {
@@ -36,6 +36,25 @@ export class CoachController {
       return new ApiResponseBuilder()
         .created("Tournament created successfully")
         .withData(response)
+        .build(res);
+    } catch (err) {
+      console.error("Error during tournament creation:", err);
+      return new ApiResponseBuilder().internalError("Server error").build(res);
+    }
+  }
+  static async getLineUpOfMatch(req: Request, res: Response) {
+    try {
+      const { id, teamId } = req.params;
+
+      const response = await coachService.lineUpPlayers(id, teamId);
+
+      if (!response.ok) {
+        return new ApiResponseBuilder().badRequest(response.message).build(res);
+      }
+
+      return new ApiResponseBuilder()
+        .ok(response.message)
+        .withData(response.data)
         .build(res);
     } catch (err) {
       console.error("Error during tournament creation:", err);
