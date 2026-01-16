@@ -83,10 +83,13 @@ enum PlayerPosition {
   LB
   CDM
   CM
+  CM01
+  CM02
   CAM
   RW
   LW
   ST
+  ST01
 }
 
 

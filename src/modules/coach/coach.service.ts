@@ -15,7 +15,6 @@ export class CoachService {
       isCaptain?: boolean;
     }[]
   ) {
-    // 1️⃣ Validate match + team
     const match = await this.prismaService.match.findFirst({
       where: {
         id: matchId,
@@ -24,7 +23,10 @@ export class CoachService {
     });
 
     if (!match) {
-      throw new Error("Team is not part of this match");
+      return {
+        ok: false,
+        message: "Team is not part of this match",
+      };
     }
 
     // 2️⃣ Prevent re-request if already approved
@@ -38,7 +40,10 @@ export class CoachService {
     });
 
     if (existingLineup?.state === "APPROVED") {
-      throw new Error("Approved lineup cannot be modified");
+      return {
+        ok: false,
+        message: "Approved lineup cannot be modified",
+      };
     }
 
     // 3️⃣ Atomic transaction (IMPORTANT)
