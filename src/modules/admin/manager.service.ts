@@ -138,7 +138,7 @@ export class ManagerServices {
       teamInfo.data!.team.id,
     );
     const accessKey = generatePassword();
-    const hashedAccessKey = bcrypt.hash(String(accessKey), 10);
+    const hashedAccessKey =await bcrypt.hash(String(accessKey), 10);
     const registrationKey = (
       (teamInfo.data?.team.teamName?.slice(0, 4) ?? "") +
       generatePassword(4) +
@@ -378,7 +378,7 @@ export class ManagerServices {
         };
       }
       const accessKey = generatePassword();
-      const hashedAccessKey = bcrypt.hash(String(accessKey), 10);
+      const hashedAccessKey =await bcrypt.hash(String(accessKey), 10);
       const registrationKey = (
         (teamInfo.teamName?.slice(0, 4) ?? "") +
         generatePassword(4) +

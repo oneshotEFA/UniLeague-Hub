@@ -9,5 +9,6 @@ router.post("/user/update", AuthController.updateUser);
 router.get("/user/me/:id", AuthController.getMe);
 router.post("/changePassword", AuthController.changePassword);
 router.post("/player", AuthController.authPlayer);
+router.post("/coach/login", AuthController.coachLogin);
 
 export default router;

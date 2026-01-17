@@ -1,6 +1,6 @@
-import { Request, Response } from "express";
-import { ApiResponseBuilder } from "../../common/utils/ApiResponse";
-import { AuthService } from "./auth.service";
+import { Request, Response } from 'express';
+import { ApiResponseBuilder } from '../../common/utils/ApiResponse';
+import { AuthService } from './auth.service';
 
 const authService = new AuthService();
 
@@ -20,7 +20,7 @@ export class AuthController {
     }
 
     return new ApiResponseBuilder()
-      .created("User created")
+      .created('User created')
       .withData(result.data)
       .build(res);
   }
@@ -34,7 +34,7 @@ export class AuthController {
     }
 
     return new ApiResponseBuilder()
-      .created("login successful")
+      .created('login successful')
       .withData(result.data)
       .build(res);
   }
@@ -53,7 +53,7 @@ export class AuthController {
     }
 
     return new ApiResponseBuilder()
-      .created("change was successful")
+      .created('change was successful')
       .withData(result.data)
       .build(res);
   }
@@ -68,7 +68,7 @@ export class AuthController {
     }
 
     return new ApiResponseBuilder()
-      .created("updated")
+      .created('updated')
       .withData(result.data)
       .build(res);
   }
@@ -82,7 +82,7 @@ export class AuthController {
     }
 
     return new ApiResponseBuilder()
-      .created("get em")
+      .created('get em')
       .withData(result.data)
       .build(res);
   }
@@ -95,7 +95,22 @@ export class AuthController {
     }
 
     return new ApiResponseBuilder()
-      .created("get em")
+      .created('get em')
+      .withData(result.data)
+      .build(res);
+  }
+
+  static async coachLogin(req: Request, res: Response) {
+    const { teamName, password } = req.body;
+
+    const result = await authService.coachLogin(password,teamName);
+
+    if (!result.ok) {
+      return new ApiResponseBuilder().badRequest(result.error).build(res);
+    }
+
+    return new ApiResponseBuilder()
+      .created('login successful')
       .withData(result.data)
       .build(res);
   }
