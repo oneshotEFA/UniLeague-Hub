@@ -99,4 +99,19 @@ export class AuthController {
       .withData(result.data)
       .build(res);
   }
+
+  static async coachLogin(req: Request, res: Response) {
+    const { teamName, password } = req.body;
+
+    const result = await authService.coachLogin(password,teamName);
+
+    if (!result.ok) {
+      return new ApiResponseBuilder().badRequest(result.error).build(res);
+    }
+
+    return new ApiResponseBuilder()
+      .created('login successful')
+      .withData(result.data)
+      .build(res);
+  }
 }
