@@ -7,6 +7,7 @@ import {
   reverseRedCard,
   reverseYellowCard,
   validateMatch,
+  validatePlayer,
 } from "./utility";
 import { cleanData } from "../../common/utils/utility";
 import { eventBus } from "../../events/event-bus";
@@ -20,7 +21,10 @@ export class MatchEventService {
       if (!validate.ok) {
         return { ok: false, error: validate.error };
       }
-
+      const ok = await validatePlayer(data.playerId, data.matchId, data.teamId);
+      if (!ok.ok) {
+        return { ok: false, error: ok.message };
+      }
       const match = await this.prismaService.match.findUnique({
         where: { id: data.matchId },
         select: {
