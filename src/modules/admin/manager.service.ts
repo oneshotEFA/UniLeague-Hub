@@ -21,12 +21,11 @@ export class ManagerServices {
     private prismaService = prisma,
     private tournamentService: TournamentService,
     private notificationService: NotificationService,
-    private teamService: TeamService
+    private teamService: TeamService,
   ) {}
   async initTournamentStanding(tournamentId: string) {
-    const init = await this.tournamentService.initTournamentStanding(
-      tournamentId
-    );
+    const init =
+      await this.tournamentService.initTournamentStanding(tournamentId);
     if (!init.ok) {
       return {
         ok: false,
@@ -36,9 +35,8 @@ export class ManagerServices {
     return init;
   }
   async getPlayerByTournament(tournamentId: string) {
-    const player = await this.tournamentService.getPlayersByTournament(
-      tournamentId
-    );
+    const player =
+      await this.tournamentService.getPlayersByTournament(tournamentId);
     if (!player.ok) {
       return {
         ok: false,
@@ -48,9 +46,8 @@ export class ManagerServices {
     return player;
   }
   async getFixtureByTournament(tournamentId: string) {
-    const fixture = await this.tournamentService.getTournamentFixtures(
-      tournamentId
-    );
+    const fixture =
+      await this.tournamentService.getTournamentFixtures(tournamentId);
     if (!fixture.ok) {
       return {
         ok: false,
@@ -60,9 +57,8 @@ export class ManagerServices {
     return fixture;
   }
   async getStandingByTournament(tournamentId: string) {
-    const standing = await this.tournamentService.getTournamentStandings(
-      tournamentId
-    );
+    const standing =
+      await this.tournamentService.getTournamentStandings(tournamentId);
     if (!standing.ok) {
       return {
         ok: false,
@@ -82,9 +78,8 @@ export class ManagerServices {
     return teams;
   }
   async getNewsByTournament(tournamentId: string) {
-    const news = await this.notificationService.getTournamentBroadCast(
-      tournamentId
-    );
+    const news =
+      await this.notificationService.getTournamentBroadCast(tournamentId);
     if (!news.ok) {
       return {
         ok: false,
@@ -124,13 +119,13 @@ export class ManagerServices {
     coachEmail: string,
     coachName: string,
     logo: Express.Multer.File,
-    tournamentId: string
+    tournamentId: string,
   ): Promise<{ ok: boolean; data?: any; error?: string }> {
     const teamInfo = await this.teamService.createTeam(
       teamName,
       coachName,
       coachEmail,
-      logo
+      logo,
     );
     if (!teamInfo || !teamInfo.ok) {
       return {
@@ -140,7 +135,7 @@ export class ManagerServices {
     }
     const res = await this.tournamentService.addTeamToTournament(
       tournamentId,
-      teamInfo.data!.team.id
+      teamInfo.data!.team.id,
     );
     const accessKey = generatePassword();
     const hashedAccessKey = bcrypt.hash(String(accessKey), 10);
@@ -212,14 +207,14 @@ export class ManagerServices {
     tournamentId: string,
     managerId: string,
     content: { content: string; title: string; excerpt: string },
-    banner: Express.Multer.File
+    banner: Express.Multer.File,
   ) {
     // const res = await this.notificationService.broadCastToTournament;
     const response = await notificationService.broadCastToTournament(
       managerId,
       tournamentId,
       content,
-      banner
+      banner,
     );
     if (!response.ok) {
       return {
@@ -272,7 +267,7 @@ export class ManagerServices {
           category: item.usage,
           teamName:
             item.ownerType === "TEAM"
-              ? teamMap.get(item.ownerId) ?? null
+              ? (teamMap.get(item.ownerId) ?? null)
               : null,
         })),
       };
@@ -287,13 +282,13 @@ export class ManagerServices {
     image: Express.Multer.File,
     ownerId: string,
     ownerType: MediaOwnerType,
-    usage: ImageUsage
+    usage: ImageUsage,
   ) {
     const res = await gallery.savePicture(
       image.buffer,
       ownerId,
       ownerType,
-      usage
+      usage,
     );
     if (!res.ok) {
       return {
@@ -320,7 +315,7 @@ export class ManagerServices {
     const res = await notificationService.sendNotification(
       senderId,
       message,
-      receiverId[0].id
+      receiverId[0].id,
     );
     if (!res.ok) {
       return {
@@ -414,7 +409,7 @@ export class ManagerServices {
       }
       return {
         ok: true,
-        message: "under process",
+        message: `sent to email ${teamInfo.coachEmail}!!`,
       };
     } catch (error) {
       return {

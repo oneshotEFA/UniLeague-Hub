@@ -61,4 +61,61 @@ export class CoachController {
       return new ApiResponseBuilder().internalError("Server error").build(res);
     }
   }
+  static async approveLineUp(req: Request, res: Response) {
+    try {
+      const { lineUpId, approvedId } = req.body;
+
+      const response = await coachService.approveLineUpRequest(
+        lineUpId,
+        approvedId,
+      );
+
+      if (!response.ok) {
+        return new ApiResponseBuilder().badRequest(response.message).build(res);
+      }
+
+      return new ApiResponseBuilder().ok(response.message).build(res);
+    } catch (err) {
+      console.error("Error during approving", err);
+      return new ApiResponseBuilder().internalError("Server error").build(res);
+    }
+  }
+  static async getLineUpRequests(req: Request, res: Response) {
+    try {
+      const { id, teamId } = req.params;
+
+      const response = await coachService.getLineUpRequest(id, teamId);
+
+      if (!response.ok) {
+        return new ApiResponseBuilder().badRequest(response.message).build(res);
+      }
+
+      return new ApiResponseBuilder()
+        .ok(response.message)
+        .withData(response.data)
+        .build(res);
+    } catch (err) {
+      console.error("Error during approving", err);
+      return new ApiResponseBuilder().internalError("Server error").build(res);
+    }
+  }
+  static async rejectLineUp(req: Request, res: Response) {
+    try {
+      const { lineUpId, approvedId } = req.body;
+
+      const response = await coachService.rejectLineUpRequest(
+        lineUpId,
+        approvedId,
+      );
+
+      if (!response.ok) {
+        return new ApiResponseBuilder().badRequest(response.message).build(res);
+      }
+
+      return new ApiResponseBuilder().ok(response.message).build(res);
+    } catch (err) {
+      console.error("Error during approving", err);
+      return new ApiResponseBuilder().internalError("Server error").build(res);
+    }
+  }
 }

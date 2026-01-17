@@ -29,7 +29,6 @@ export class CoachService {
       };
     }
 
-    // 2️⃣ Prevent re-request if already approved
     const existingLineup = await this.prismaService.matchLineup.findUnique({
       where: {
         matchId_teamId: {
@@ -46,7 +45,6 @@ export class CoachService {
       };
     }
 
-    // 3️⃣ Atomic transaction (IMPORTANT)
     const trans = await this.prismaService.$transaction(async (tx) => {
       // delete old draft/requested lineup players
       if (existingLineup) {
@@ -140,7 +138,7 @@ export class CoachService {
       },
     };
   }
-  async gteLineUpRequest(matchId: string, teamId: string) {
+  async getLineUpRequest(matchId: string, teamId: string) {
     const data = await this.prismaService.matchLineup.findFirst({
       where: {
         matchId,
@@ -172,10 +170,45 @@ export class CoachService {
     return {
       ok: true,
       message: "fetched Line-Up History",
+      data: { players: data.players, status: data.state },
+    };
+  }
+  async approveLineUpRequest(id: string, approvedById: string) {
+    const res = await this.prismaService.matchLineup.update({
+      where: { id },
       data: {
-        starting: data.players.filter((player) => player.role === "STARTING"),
-        bench: data.players.filter((player) => player.role === "BENCH"),
+        state: "APPROVED",
+        approvedById,
       },
+    });
+    if (!res) {
+      return {
+        ok: false,
+        message: "line-up not found",
+      };
+    }
+    return {
+      ok: true,
+      message: "line-up approved",
+    };
+  }
+  async rejectLineUpRequest(id: string, approvedById: string) {
+    const res = await this.prismaService.matchLineup.update({
+      where: { id },
+      data: {
+        state: "REJECTED",
+        approvedById,
+      },
+    });
+    if (!res) {
+      return {
+        ok: false,
+        message: "line-up not found",
+      };
+    }
+    return {
+      ok: true,
+      message: "line-up approved",
     };
   }
 }
