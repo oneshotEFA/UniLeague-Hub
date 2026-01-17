@@ -14,8 +14,10 @@ import { ImageUsage, MediaOwnerType } from "../../../generated/prisma";
 import { getNextDaysRange } from "../matches/mtype";
 import { generatePassword } from "./utility";
 import bcrypt from "bcryptjs";
+import { CoachService } from "../coach/coach.service";
 const gallery = new GalleryService();
 const notificationService = new NotificationService(prisma, gallery);
+const coachService = new CoachService();
 export class ManagerServices {
   constructor(
     private prismaService = prisma,
@@ -417,5 +419,23 @@ export class ManagerServices {
         message: "smtg just happen",
       };
     }
+  }
+  async pendingActions(tournamentId: string) {
+    return this.prismaService.matchLineup.findMany({
+      where: {
+        state: "REQUESTED",
+        team: {
+          tournaments: {
+            some: {
+              tournamentId: tournamentId,
+            },
+          },
+        },
+      },
+      select: {
+        matchId: true,
+        team: { select: { teamName: true } },
+      },
+    });
   }
 }

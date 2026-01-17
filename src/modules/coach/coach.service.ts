@@ -211,4 +211,21 @@ export class CoachService {
       message: "line-up approved",
     };
   }
+  async getAllRequestedLinUpsTeamId() {
+    const teamIds = await this.prismaService.matchLineup.findMany({
+      where: { state: "REQUESTED" },
+      select: { teamId: true },
+    });
+    if (teamIds.length < 0) {
+      return {
+        ok: false,
+        data: [],
+        message: "No Requested LineUp",
+      };
+    }
+    return {
+      ok: true,
+      data: teamIds,
+    };
+  }
 }
