@@ -172,4 +172,10 @@ route.get(
   requireAdmin(["tournamentManager"]),
   CoachController.getLineUpRequests,
 );
+route.get(
+  "/match/line-up/requests/pending",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
+  ManagerController.pendingActionsLineup,
+);
 export default route;

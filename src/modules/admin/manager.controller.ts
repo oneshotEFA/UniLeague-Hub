@@ -16,7 +16,7 @@ const managerService = new ManagerServices(
   prisma,
   tournament,
   notification,
-  team
+  team,
 );
 export class ManagerController {
   static async registerTeam(req: Request, res: Response) {
@@ -35,7 +35,7 @@ export class ManagerController {
         coachEmail,
         coachName,
         logo,
-        tournamentId
+        tournamentId,
       );
 
       if (!result.ok) {
@@ -85,7 +85,7 @@ export class ManagerController {
         tournamentId,
         managerId,
         content,
-        banner
+        banner,
       );
 
       if (!result.ok) {
@@ -139,7 +139,7 @@ export class ManagerController {
         banner,
         ownerId,
         ownerType,
-        usage
+        usage,
       );
 
       if (!result.ok) {
@@ -228,6 +228,28 @@ export class ManagerController {
       }
 
       return new ApiResponseBuilder().ok(result.message).build(res);
+    } catch (error) {
+      console.error(error);
+      return new ApiResponseBuilder()
+        .internalError("Internal server error")
+        .build(res);
+    }
+  }
+  static async pendingActionsLineup(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const result = await managerService.pendingActions(id);
+
+      if (!result.ok) {
+        return new ApiResponseBuilder()
+          .badRequest("no result from the api")
+          .build(res);
+      }
+
+      return new ApiResponseBuilder()
+        .ok(result.message)
+        .withData(result.data)
+        .build(res);
     } catch (error) {
       console.error(error);
       return new ApiResponseBuilder()

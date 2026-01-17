@@ -292,4 +292,75 @@ export class AuthService {
       };
     }
   }
+
+  // get coach login
+
+  async coachLogin(password: string, teamName: string){
+    try{
+      if (!password || !teamName){
+        return {
+          ok: false,
+          error: "all input are required"
+        }
+      }
+      
+      const team = await this.prismaService.team.findUnique({
+        where: {teamName:"manchester united"}
+      });
+      if (!team){
+        return {
+          ok: false,
+          error: "no team found"
+        }
+      }
+      const coach = await this.prismaService.team.findUnique({
+        where: {teamName}
+      })
+
+      if (!coach){
+        return {
+          ok: false,
+          error: "No coach is found"
+        }
+      }
+      if (!coach.accessKey){
+        return {
+          ok: false,
+          error: "the team have no any coach yet pls assign one"
+        }
+      }
+      const isPasswordValid = await bcrypt.compare(password, coach.accessKey);
+      if (!isPasswordValid){
+        return {
+          ok: false,
+          error: "the password is wrong"
+        }
+      }
+      const accessPayload = {
+        teamName: teamName,
+        tMid: team.id,
+        role: "coach"
+      };
+
+      const token = jwt.sign(accessPayload, process.env.ACCESS_SECRET!, {
+        expiresIn: "59m",
+      });
+      
+      return {
+        ok: true,
+        data: {
+          coachName: team.coachName,
+          TeamName: team.teamName,
+          aToken: token,
+          tMid: accessPayload.tMid,
+          role: "coach",
+        }
+      }
+    }catch (error: any){
+      return{
+        ok: false,
+        error: error.message
+      }
+    }
+  }
 }
