@@ -8,6 +8,7 @@ import { teamControl } from "../teams/team.controller";
 import { reqAuth } from "../../middlewares/reqAuth";
 import { requireAdmin } from "../../middlewares/reqPermission";
 import { CoachController } from "../coach/coach.controller";
+import { TournamentController } from "../tournaments/tournament.controller";
 
 const route = Router();
 // teams
@@ -177,5 +178,12 @@ route.get(
   reqAuth,
   requireAdmin(["tournamentManager"]),
   ManagerController.pendingActionsLineup,
+);
+//tournaments
+route.get(
+  "/tournament/:tournamentId/init",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
+  TournamentController.initTournamentStanding,
 );
 export default route;

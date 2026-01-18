@@ -174,11 +174,13 @@ export class CoachService {
     };
   }
   async approveLineUpRequest(id: string, approvedById: string) {
+    console.log(approvedById);
     const res = await this.prismaService.matchLineup.update({
       where: { id },
       data: {
         state: "APPROVED",
         approvedById,
+        approvedAt: new Date(),
       },
     });
     if (!res) {
@@ -232,10 +234,14 @@ export class CoachService {
     const lineups = await this.prismaService.matchLineup.findMany({
       where: { teamId },
       select: {
+        id: true,
         match: {
           select: {
-            homeTeam: { select: { teamName: true } },
-            awayTeam: { select: { teamName: true } },
+            id: true,
+            venue: true,
+            scheduledDate: true,
+            homeTeam: { select: { teamName: true, id: true } },
+            awayTeam: { select: { teamName: true, id: true } },
           },
         },
         state: true,
@@ -244,7 +250,8 @@ export class CoachService {
         approvedBy: { select: { username: true } },
       },
     });
-    if (lineups.length <= 0 || !length) {
+
+    if (lineups.length < 0 || !lineups) {
       return {
         ok: false,
         data: [],
@@ -252,7 +259,7 @@ export class CoachService {
       };
     }
     return {
-      ok: false,
+      ok: true,
       data: lineups,
       message: "Line-Up Request Found",
     };

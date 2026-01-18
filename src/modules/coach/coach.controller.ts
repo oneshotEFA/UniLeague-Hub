@@ -45,7 +45,7 @@ export class CoachController {
   static async getLineUpOfMatch(req: Request, res: Response) {
     try {
       const { id, teamId } = req.params;
-
+      console.log(id);
       const response = await coachService.lineUpPlayers(id, teamId);
 
       if (!response.ok) {
@@ -63,11 +63,11 @@ export class CoachController {
   }
   static async approveLineUp(req: Request, res: Response) {
     try {
-      const { lineUpId, approvedId } = req.body;
+      const { lineUpId, approveId } = req.body;
 
       const response = await coachService.approveLineUpRequest(
         lineUpId,
-        approvedId,
+        approveId,
       );
 
       if (!response.ok) {
@@ -102,7 +102,6 @@ export class CoachController {
   static async rejectLineUp(req: Request, res: Response) {
     try {
       const { lineUpId, approvedId } = req.body;
-
       const response = await coachService.rejectLineUpRequest(
         lineUpId,
         approvedId,
@@ -120,15 +119,16 @@ export class CoachController {
   }
   static async getLineupHistory(req: Request, res: Response) {
     try {
-      const { teamId } = req.body;
+      const { teamId } = req.params;
 
       const response = await coachService.getLineupHistory(teamId);
-
       if (!response.ok) {
         return new ApiResponseBuilder().badRequest(response.message).build(res);
       }
-
-      return new ApiResponseBuilder().ok(response.message).build(res);
+      return new ApiResponseBuilder()
+        .ok(response.message)
+        .withData(response.data)
+        .build(res);
     } catch (err) {
       console.error("Error during approving", err);
       return new ApiResponseBuilder().internalError("Server error").build(res);
