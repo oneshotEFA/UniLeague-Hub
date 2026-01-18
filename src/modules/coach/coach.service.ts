@@ -228,4 +228,33 @@ export class CoachService {
       data: teamIds,
     };
   }
+  async getLineupHistory(teamId: string) {
+    const lineups = await this.prismaService.matchLineup.findMany({
+      where: { teamId },
+      select: {
+        match: {
+          select: {
+            homeTeam: { select: { teamName: true } },
+            awayTeam: { select: { teamName: true } },
+          },
+        },
+        state: true,
+        approvedAt: true,
+        submittedAt: true,
+        approvedBy: { select: { username: true } },
+      },
+    });
+    if (lineups.length <= 0 || !length) {
+      return {
+        ok: false,
+        data: [],
+        message: "No Line-Up Request Found",
+      };
+    }
+    return {
+      ok: false,
+      data: lineups,
+      message: "Line-Up Request Found",
+    };
+  }
 }

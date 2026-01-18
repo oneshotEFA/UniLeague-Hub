@@ -118,4 +118,20 @@ export class CoachController {
       return new ApiResponseBuilder().internalError("Server error").build(res);
     }
   }
+  static async getLineupHistory(req: Request, res: Response) {
+    try {
+      const { teamId } = req.body;
+
+      const response = await coachService.getLineupHistory(teamId);
+
+      if (!response.ok) {
+        return new ApiResponseBuilder().badRequest(response.message).build(res);
+      }
+
+      return new ApiResponseBuilder().ok(response.message).build(res);
+    } catch (err) {
+      console.error("Error during approving", err);
+      return new ApiResponseBuilder().internalError("Server error").build(res);
+    }
+  }
 }
