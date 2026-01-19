@@ -20,13 +20,13 @@ interface NewsContent {
 export class NotificationService {
   constructor(
     private prismaService = prisma,
-    private galleryService: GalleryService
+    private galleryService: GalleryService,
   ) {}
   // send notification
   async sendNotification(
     senderAdminId: string,
     message: string,
-    reciveradminId: string
+    reciveradminId: string,
   ) {
     try {
       if (!senderAdminId) {
@@ -77,7 +77,7 @@ export class NotificationService {
       message: string;
       title: string;
       critical: "critical" | "serious" | "warning" | "error";
-    }
+    },
   ) {
     try {
       if (!senderAdminId) {
@@ -110,8 +110,8 @@ export class NotificationService {
               receiverAdminId: admin.id,
               senderAdminId,
             },
-          })
-        )
+          }),
+        ),
       );
       return {
         ok: true,
@@ -135,7 +135,7 @@ export class NotificationService {
       title: string;
       excerpt: string;
     },
-    photo?: Express.Multer.File
+    photo?: Express.Multer.File,
   ) {
     try {
       if (!senderAdminId) {
@@ -182,7 +182,7 @@ export class NotificationService {
           photo.buffer,
           notfication.id,
           "TOURNAMENT",
-          "BANNER"
+          "BANNER",
         );
       }
       return {
@@ -277,7 +277,7 @@ export class NotificationService {
             ...not,
             Image: Image[0].url,
           };
-        })
+        }),
       );
 
       return {
@@ -348,7 +348,7 @@ export class NotificationService {
             ...not,
             Image: Image[0]?.url ?? "",
           };
-        })
+        }),
       );
 
       return {
@@ -459,7 +459,7 @@ export class NotificationService {
       excerpt: string;
       adminId?: string;
     },
-    image?: Express.Multer.File
+    image?: Express.Multer.File,
   ) {
     try {
       if (!content) {
@@ -486,7 +486,7 @@ export class NotificationService {
           broadCast.id,
           "WEB",
           "COVER",
-          true
+          true,
         );
       }
       return {
@@ -698,7 +698,7 @@ export class NotificationService {
   }
   async sendEmailToManager(
     credentials: ManagerCredentials,
-    tournamentName: string
+    tournamentName: string,
   ) {
     try {
       const { email, username, temporaryPassword } = credentials;
@@ -744,7 +744,7 @@ export class NotificationService {
           accessKey,
         }),
       });
-
+      console.log("hii", info);
       return {
         success: info.accepted.includes(email),
         message: info.response,
