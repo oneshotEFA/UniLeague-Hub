@@ -7,6 +7,8 @@ import { MatchEventController } from "../match-events/macth-event.controller";
 import { teamControl } from "../teams/team.controller";
 import { reqAuth } from "../../middlewares/reqAuth";
 import { requireAdmin } from "../../middlewares/reqPermission";
+import { CoachController } from "../coach/coach.controller";
+import { TournamentController } from "../tournaments/tournament.controller";
 
 const route = Router();
 // teams
@@ -15,13 +17,13 @@ route.post(
   upload.single("logo"),
   reqAuth,
   requireAdmin(["tournamentManager"]),
-  ManagerController.registerTeam
+  ManagerController.registerTeam,
 );
 route.delete(
   "/team/delete/:id",
   reqAuth,
   requireAdmin(["tournamentManager"]),
-  teamControl.removeTeam
+  teamControl.removeTeam,
 );
 
 //matches
@@ -29,69 +31,69 @@ route.post(
   "/matches/create",
   reqAuth,
   requireAdmin(["tournamentManager"]),
-  MatchController.createMatches
+  MatchController.createMatches,
 ); // multiple creation
 route.post(
   "/match/create",
   reqAuth,
   requireAdmin(["tournamentManager"]),
-  MatchController.createMatch
+  MatchController.createMatch,
 ); // single creation
 route.post(
   "/generate/fixture",
   reqAuth,
   requireAdmin(["tournamentManager"]),
-  ManagerController.generateFixture
+  ManagerController.generateFixture,
 );
 route.get(
   "/matches/:id/tournament",
   reqAuth,
   requireAdmin(["tournamentManager"]),
-  MatchController.getMatches
+  MatchController.getMatches,
 );
 route.post(
   "/match/event/create",
   reqAuth,
   requireAdmin(["tournamentManager"]),
-  MatchEventController.addEvent
+  MatchEventController.addEvent,
 );
 route.put(
   "/match/:id/start",
   reqAuth,
   requireAdmin(["tournamentManager"]),
-  MatchController.startMatch
+  MatchController.startMatch,
 );
 route.put(
   "/match/:id/end",
   reqAuth,
   requireAdmin(["tournamentManager"]),
-  MatchController.endMatch
+  MatchController.endMatch,
 );
 route.delete(
   "/match/event/:id/delete",
   reqAuth,
   requireAdmin(["tournamentManager"]),
-  MatchEventController.deleteEvent
+  MatchEventController.deleteEvent,
 );
 //players
 route.post(
   "/player/transfer",
   reqAuth,
   requireAdmin(["tournamentManager"]),
-  PlayerControl.transferPlayer
+  PlayerControl.transferPlayer,
 );
 route.delete(
   "/player/delete/:id",
   reqAuth,
   requireAdmin(["tournamentManager"]),
-  PlayerControl.deletePlayer
+  PlayerControl.deletePlayer,
 );
 route.post(
   "/player/create",
   reqAuth,
   requireAdmin(["tournamentManager"]),
   upload.single("playerPhoto"),
-  PlayerControl.createPlayer
+  PlayerControl.createPlayer,
 );
 
 //gallery
@@ -99,14 +101,14 @@ route.get(
   "/gallery/:id/tournament",
   reqAuth,
   requireAdmin(["tournamentManager"]),
-  ManagerController.getGalleryOfTournament
+  ManagerController.getGalleryOfTournament,
 );
 route.post(
   "/gallery/post",
   reqAuth,
   requireAdmin(["tournamentManager"]),
   upload.single("banner"),
-  ManagerController.postToGallery
+  ManagerController.postToGallery,
 );
 
 //news
@@ -115,32 +117,32 @@ route.post(
   reqAuth,
   requireAdmin(["tournamentManager"]),
   upload.single("banner"),
-  ManagerController.postNewsToTournament
+  ManagerController.postNewsToTournament,
 );
 route.post(
   "/news/create",
   reqAuth,
   requireAdmin(["tournamentManager"]),
   upload.single("banner"),
-  ManagerController.postNewsToTournament
+  ManagerController.postNewsToTournament,
 );
 route.delete(
   "/news/delete/:id",
   reqAuth,
   requireAdmin(["tournamentManager"]),
-  ManagerController.deleteNews
+  ManagerController.deleteNews,
 );
 route.post(
   "/message/send",
   reqAuth,
   requireAdmin(["tournamentManager"]),
-  ManagerController.directMessage
+  ManagerController.directMessage,
 );
 route.get(
   "/message/read/:id",
   reqAuth,
   requireAdmin(["tournamentManager"]),
-  ManagerController.getDirectMessages
+  ManagerController.getDirectMessages,
 );
 
 //mail
@@ -149,6 +151,39 @@ route.post(
   "/mail/resend/:id",
   reqAuth,
   requireAdmin(["tournamentManager"]),
-  ManagerController.resendCredential
+  ManagerController.resendCredential,
+);
+
+//lineup
+route.put(
+  "/match/line-up/approve",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
+  CoachController.approveLineUp,
+);
+route.put(
+  "/match/line-up/reject",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
+  CoachController.rejectLineUp,
+);
+route.get(
+  "/match/line-up/requests/:id/:teamId",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
+  CoachController.getLineUpRequests,
+);
+route.get(
+  "/match/line-up/requests/pending",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
+  ManagerController.pendingActionsLineup,
+);
+//tournaments
+route.get(
+  "/tournament/:tournamentId/init",
+  reqAuth,
+  requireAdmin(["tournamentManager"]),
+  TournamentController.initTournamentStanding,
 );
 export default route;

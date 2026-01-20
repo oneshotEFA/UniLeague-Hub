@@ -92,7 +92,7 @@ export class TournamentController {
     }
 
     return new ApiResponseBuilder()
-      .ok("Tournament standings fetched")
+      .ok("Tournament standings Initialized")
       .withData(result.data)
       .build(res);
   }
@@ -111,9 +111,9 @@ export class TournamentController {
       .build(res);
   }
 
-  // dash board status 
-  static async dashBoardStatus(req: Request, res: Response){
-    const result = await tournamentService.getDashboardStats()
+  // dash board status
+  static async dashBoardStatus(req: Request, res: Response) {
+    const result = await tournamentService.getDashboardStats();
     if (!result.ok) {
       return new ApiResponseBuilder().notFound("result?.error").build(res);
     }
@@ -123,8 +123,6 @@ export class TournamentController {
       .withData(result.data)
       .build(res);
   }
-
-
 
   // GET TOURNAMENT SUMMARY
   // static async getTournamentSummary(req: Request, res: Response) {

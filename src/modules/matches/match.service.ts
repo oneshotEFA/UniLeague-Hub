@@ -74,7 +74,7 @@ export class MatchService {
         data: {
           ...match,
           scheduledDate: this.formatDate(
-            match.scheduledDate as unknown as string
+            match.scheduledDate as unknown as string,
           ),
         },
       };
@@ -97,7 +97,7 @@ export class MatchService {
         data: {
           ...match,
           scheduledDate: this.formatDate(
-            match.scheduledDate as unknown as string
+            match.scheduledDate as unknown as string,
           ),
         },
       };
@@ -120,7 +120,7 @@ export class MatchService {
         data: {
           ...match,
           scheduledDate: this.formatDate(
-            match.scheduledDate as unknown as string
+            match.scheduledDate as unknown as string,
           ),
         },
       };
@@ -158,7 +158,7 @@ export class MatchService {
         data: {
           ...match,
           scheduledDate: this.formatDate(
-            match.scheduledDate as unknown as string
+            match.scheduledDate as unknown as string,
           ),
         },
       };
@@ -200,7 +200,7 @@ export class MatchService {
         data: {
           ...match,
           scheduledDate: this.formatDate(
-            match.scheduledDate as unknown as string
+            match.scheduledDate as unknown as string,
           ),
         },
       };
@@ -438,7 +438,7 @@ export class MatchService {
         data: {
           ...matchData,
           scheduledDate: this.formatDate(
-            matchData.scheduledDate as unknown as string
+            matchData.scheduledDate as unknown as string,
           ),
         },
       };
@@ -574,6 +574,7 @@ export class MatchService {
         ...(teamId && {
           OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }],
         }),
+        status: "SCHEDULED",
       },
       include: {
         homeTeam: true,

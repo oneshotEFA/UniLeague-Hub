@@ -146,3 +146,25 @@ export async function reverseYellowCard(tx: any, event: any) {
     },
   });
 }
+export const validatePlayer = async (
+  playerId: string,
+  matchId: string,
+  teamId: string,
+) => {
+  const res = await prisma.matchLineup.findFirst({
+    where: { matchId, teamId },
+    select: { players: true },
+  });
+  const player = res?.players.filter((player) => {
+    player.id === playerId && player.isActive;
+  });
+  if (!player) {
+    return {
+      ok: false,
+      message: "player is ot active or not in the line-up",
+    };
+  }
+  return {
+    ok: true,
+  };
+};
