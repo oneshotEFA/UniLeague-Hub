@@ -293,7 +293,7 @@ export class AuthService {
     }
   }
 
-  // get coach login
+  // coach login
 
   async coachLogin(password: string, teamName: string){
     try{
@@ -305,7 +305,7 @@ export class AuthService {
       }
       
       const team = await this.prismaService.team.findUnique({
-        where: {teamName:"manchester united"}
+        where: {teamName}
       });
       if (!team){
         return {
