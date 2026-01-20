@@ -91,3 +91,10 @@ export type TournamentAnnouncementInput = {
   organizer?: string;
   extraInfo?: string; // registration open, prize, age group, etc.
 };
+export type SystemErrorReport = {
+  WhatType: string;
+  message: string;
+  category: string;
+  messageDeveloper: string;
+  severity: "critical" | "serious" | "warning" | "error";
+};

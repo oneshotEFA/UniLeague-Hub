@@ -9,25 +9,29 @@ const gallery = new GalleryService();
 const notificationService = new NotificationService(prisma, gallery);
 export function cleanData(update: Record<string, any>) {
   return Object.fromEntries(
-    Object.entries(update).filter(([_, v]) => v !== undefined)
+    Object.entries(update).filter(([_, v]) => v !== undefined),
   );
 }
 
 export async function withRetry(
   fn: () => Promise<void>,
-  options: RetryOptions = {}
+  options: RetryOptions = {},
 ) {
   const { retries = 3, delayMs = 500, onFail, onRecover } = options;
 
   let lastError: Error | null = null;
+  let recovered = false;
 
-  // 1️⃣ Normal retry attempts
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       await fn();
-      return; // success
+      return;
     } catch (error: any) {
-      lastError = error;
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      if (!isRecoverable(lastError)) {
+        break; // 🔥 stop retrying non-recoverable errors
+      }
 
       if (attempt < retries) {
         await new Promise((r) => setTimeout(r, delayMs * attempt));
@@ -35,36 +39,33 @@ export async function withRetry(
     }
   }
 
-  // 2️⃣ Mark as failed (soft failure)
   if (onFail && lastError) {
     await onFail(lastError);
   }
 
-  // 3️⃣ Attempt recovery (hard fix)
-  if (onRecover) {
+  if (onRecover && lastError) {
     try {
       await onRecover();
-      return; // recovery success = job success
-    } catch (recoveryError) {
-      // recovery failed → escalate
-      console.error("CRITICAL: Match recovery failed", {
-        error: recoveryError,
-      });
-      throw recoveryError;
+      recovered = true;
+    } catch (recoveryError: any) {
+      lastError =
+        recoveryError instanceof Error
+          ? recoveryError
+          : new Error(String(recoveryError));
     }
   }
-  console.log("alomost there");
-  const data: {
-    WhatType: string;
-    message: string;
-    category: string;
-    messageDeveloper: string;
-    severity: "critical" | "serious" | "warning" | "error";
-  } = await AiService.analysisError(lastError);
 
-  await notificationService.systemCall(data);
-  throw lastError;
+  try {
+    if (lastError) {
+      const data = await AiService.analysisError(lastError);
+      console.log(data);
+      await notificationService.systemCall(data);
+    }
+  } catch (systemError) {
+    console.error("SYSTEM ALERT FAILED", systemError);
+  }
 }
+
 export function isRecoverable(error: any) {
   return (
     error?.code === "P2003" || // FK violation
@@ -76,7 +77,7 @@ export function generateTeamKey(teamId: string, daysValid: number = 30) {
   const token = jwt.sign(
     { teamId },
     process.env.TEAM_KEY_SECRET || "default_team_key_secret",
-    { expiresIn: `${daysValid}d` } // expires after `daysValid` days
+    { expiresIn: `${daysValid}d` }, // expires after `daysValid` days
   );
   return token;
 }

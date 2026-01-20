@@ -11,14 +11,12 @@ eventBus.on(
         const res = await AiService.generateTeamPower(payload.awayTeamId);
         const res1 = await AiService.generateTeamPower(payload.homeTeamId);
         if (!res.ok || !res1.ok) {
-          throw Error(res.error);
+          console.log(res.error);
         }
       },
       {
         retries: 5,
-        onFail: async (error) => {},
-        onRecover: async () => {},
-      }
+      },
     );
-  }
+  },
 );

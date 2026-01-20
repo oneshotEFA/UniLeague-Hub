@@ -60,7 +60,7 @@ export class ManagerController {
       const result = await managerService.generateFixture(body);
 
       if (!result.ok) {
-        return new ApiResponseBuilder().badRequest(result.error).build(res);
+        return new ApiResponseBuilder().badRequest(result?.error).build(res);
       }
 
       return new ApiResponseBuilder()

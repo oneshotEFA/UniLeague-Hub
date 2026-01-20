@@ -2,6 +2,7 @@ import axios from "axios";
 import { ai } from "../../../config/ai.config";
 import sharp from "sharp";
 import { prisma } from "../../../config/db.config";
+import { SystemErrorReport } from "./type";
 
 export function safeJsonParse(text: string) {
   try {
@@ -65,52 +66,50 @@ export async function downloadImages(homeUrl: string, awayUrl: string) {
 
 export const aiApiCall = async (prompt: any) => {
   try {
-    return withRetry(async () => {
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        config: {
-          responseMimeType: "application/json",
-        },
-        contents: [prompt],
-      });
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      config: {
+        responseMimeType: "application/json",
+      },
+      contents: [prompt],
+    });
 
-      // Extract raw text in a resilient way to support different SDK response shapes.
-      const raw: string =
-        // SDK may return a top-level text field
-        (response as any)?.text ||
-        // Or candidates might be at the top level
-        (response as any)?.candidates?.[0]?.content
-          ?.map((c: any) => c.text)
-          .join("") ||
-        // Or candidates might be nested under responseId (older/alternate shape)
-        (response as any)?.responseId?.candidates?.[0]?.content
-          ?.map((c: any) => c.text)
-          .join("") ||
-        // Fallback to empty string
-        "";
+    // Extract raw text in a resilient way to support different SDK response shapes.
+    const raw: string =
+      // SDK may return a top-level text field
+      (response as any)?.text ||
+      // Or candidates might be at the top level
+      (response as any)?.candidates?.[0]?.content
+        ?.map((c: any) => c.text)
+        .join("") ||
+      // Or candidates might be nested under responseId (older/alternate shape)
+      (response as any)?.responseId?.candidates?.[0]?.content
+        ?.map((c: any) => c.text)
+        .join("") ||
+      // Fallback to empty string
+      "";
 
-      if (!raw) {
-        const reason =
-          (response as any)?.candidates?.[0]?.finishReason ||
-          (response as any)?.responseId?.candidates?.[0]?.finishReason;
-        if (reason === "SAFETY") {
-          throw new Error(
-            "AI failed due to Safety Filters. Review prompt content."
-          );
-        }
-
+    if (!raw) {
+      const reason =
+        (response as any)?.candidates?.[0]?.finishReason ||
+        (response as any)?.responseId?.candidates?.[0]?.finishReason;
+      if (reason === "SAFETY") {
         throw new Error(
-          `AI returned an empty response. Finish Reason: ${reason || "Unknown"}`
+          "AI failed due to Safety Filters. Review prompt content.",
         );
       }
 
-      const json = safeJsonParse(raw);
+      throw new Error(
+        `AI returned an empty response. Finish Reason: ${reason || "Unknown"}`,
+      );
+    }
 
-      if (!json) {
-        throw new Error("AI returned invalid JSON.");
-      }
-      return json;
-    });
+    const json = safeJsonParse(raw);
+
+    if (!json) {
+      throw new Error("AI returned invalid JSON.");
+    }
+    return json;
   } catch (error) {
     throw new Error(`AI API call failed: ${(error as Error).message}`);
   }
@@ -164,7 +163,7 @@ export async function collectTeamStats(teamId: string) {
       last15Goals: 0,
       points: 0,
       gdList: [] as number[],
-    }
+    },
   );
 
   for (const ev of events) {
@@ -174,4 +173,23 @@ export async function collectTeamStats(teamId: string) {
   }
 
   return { ...stats, streak };
+}
+export function manualErrorAnalysis(error: any): SystemErrorReport {
+  if (error instanceof Error) {
+    return {
+      WhatType: error.name || "SystemError",
+      message: error.message || "An unexpected system error occurred",
+      category: "SYSTEM",
+      messageDeveloper: error.stack?.slice(0, 500) || "No stack trace",
+      severity: "critical",
+    };
+  }
+
+  return {
+    WhatType: "UnknownError",
+    message: "An unknown error occurred",
+    category: "SYSTEM",
+    messageDeveloper: JSON.stringify(error)?.slice(0, 500) || String(error),
+    severity: "critical",
+  };
 }
