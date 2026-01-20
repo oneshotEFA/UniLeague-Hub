@@ -735,7 +735,7 @@ export class NotificationService {
       const info = await transporter.sendMail({
         from: `"UniLeague Hub" <${process.env.ADMIN}>`,
         to: email,
-        subject: `You’ve been assigned as Manager for ${tournamentName}`,
+        subject: `Coach's Credential Detail for  ${teamName}`,
         html: generateTeamAccessEmailHTML({
           recipientName,
           teamName,
