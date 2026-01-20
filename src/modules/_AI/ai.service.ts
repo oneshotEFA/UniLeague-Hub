@@ -1,7 +1,12 @@
 import { ai } from "../../config/ai.config";
 import { prisma } from "../../config/db.config";
 // import { promises as fs } from "fs";
-import { aiApiCall, collectTeamStats, downloadImages } from "./utility/common";
+import {
+  aiApiCall,
+  collectTeamStats,
+  downloadImages,
+  manualErrorAnalysis,
+} from "./utility/common";
 import {
   buildAnnouncementPrompt,
   buildErrorAnalysisPrompt,
@@ -22,61 +27,66 @@ import {
   Match,
   MatchWeek,
   PosterInput,
+  SystemErrorReport,
   TournamentAnnouncementInput,
   TransferAnnouncementInput,
 } from "./utility/type";
 
 export class AiService {
   static async generateRandomLeagueFixture(input: LeagueInput) {
-    const {
-      teams,
-      rounds = 2,
-      matchesPerWeek = 4,
-      startDate,
-      daysBetweenWeeks = 7,
-    } = input;
-    const fixture: MatchWeek[] = [];
-    const teamList = [...teams];
-    const isOdd = teamList.length % 2 !== 0;
-    if (isOdd) teamList.push({ id: "BYE", name: "BYE" });
+    try {
+      const {
+        teams,
+        rounds = 2,
+        matchesPerWeek = 4,
+        startDate,
+        daysBetweenWeeks = 7,
+      } = input;
+      const fixture: MatchWeek[] = [];
+      const teamList = [...teams];
+      const isOdd = teamList.length % 2 !== 0;
+      if (isOdd) teamList.push({ id: "BYE", name: "BYE" });
 
-    const totalTeams = teamList.length;
-    const weeksPerRound = totalTeams - 1;
-    let weekIndex = 1;
-    let currentDate = startDate ? new Date(startDate) : new Date();
+      const totalTeams = teamList.length;
+      const weeksPerRound = totalTeams - 1;
+      let weekIndex = 1;
+      let currentDate = startDate ? new Date(startDate) : new Date();
 
-    for (let r = 0; r < rounds; r++) {
-      const teamsCopy = [...teamList];
+      for (let r = 0; r < rounds; r++) {
+        const teamsCopy = [...teamList];
 
-      for (let week = 0; week < weeksPerRound; week++) {
-        const matches: Match[] = [];
+        for (let week = 0; week < weeksPerRound; week++) {
+          const matches: Match[] = [];
 
-        for (let i = 0; i < matchesPerWeek; i++) {
-          const home = teamsCopy[i];
-          const away = teamsCopy[totalTeams - 1 - i];
+          for (let i = 0; i < matchesPerWeek; i++) {
+            const home = teamsCopy[i];
+            const away = teamsCopy[totalTeams - 1 - i];
 
-          if (home.id !== "BYE" && away.id !== "BYE") {
-            matches.push({
-              homeTeamId: home.id,
-              awayTeamId: away.id,
-              homeTeamName: home.name,
-              awayTeamName: away.name,
-              date: currentDate.toISOString().split("T")[0],
-            });
+            if (home.id !== "BYE" && away.id !== "BYE") {
+              matches.push({
+                homeTeamId: home.id,
+                awayTeamId: away.id,
+                homeTeamName: home.name,
+                awayTeamName: away.name,
+                date: currentDate.toISOString().split("T")[0],
+              });
+            }
           }
+
+          fixture.push({ matchWeek: weekIndex++, matches });
+
+          // Rotate teams for next week (except the first team)
+          teamsCopy.splice(1, 0, teamsCopy.pop()!);
+
+          currentDate.setDate(currentDate.getDate() + daysBetweenWeeks);
         }
-
-        fixture.push({ matchWeek: weekIndex++, matches });
-
-        // Rotate teams for next week (except the first team)
-        teamsCopy.splice(1, 0, teamsCopy.pop()!);
-
-        currentDate.setDate(currentDate.getDate() + daysBetweenWeeks);
       }
+      const prompt = buildLeagueShufflePrompt(fixture);
+      const data = await aiApiCall(prompt);
+      return { ok: true, data, message: "generated" };
+    } catch (error) {
+      return { ok: false, message: error };
     }
-    const prompt = buildLeagueShufflePrompt(fixture);
-
-    return await aiApiCall(prompt);
   }
   static async generatePoster(input: PosterInput) {
     // Step 1: Download the images into memory buffers
@@ -137,7 +147,7 @@ export class AiService {
           (response as any)?.candidates?.[0]?.finishReason || "Unknown";
 
         throw new Error(
-          `AI returned an empty response. Finish Reason: ${reason}`
+          `AI returned an empty response. Finish Reason: ${reason}`,
         );
       }
 
@@ -351,14 +361,17 @@ export class AiService {
   }
   private static async generateWithPrompt<T>(
     promptBuilder: (input: T) => string,
-    input: T
+    input: T,
   ) {
     try {
       const prompt = promptBuilder(input);
       return await aiApiCall(prompt);
     } catch (error) {
-      console.error("AI generation error:", error);
-      throw error;
+      console.error("AI generation failed", {
+        error,
+        input,
+      });
+      return null;
     }
   }
 
@@ -369,8 +382,32 @@ export class AiService {
   static generateAnnouncement(input: TournamentAnnouncementInput) {
     return this.generateWithPrompt(buildAnnouncementPrompt, input);
   }
-  static analysisError(input: any) {
-    console.log("ai called error found");
-    return this.generateWithPrompt(buildErrorAnalysisPrompt, input);
+  static async analysisError(input: any): Promise<SystemErrorReport> {
+    console.log("AI error analysis started");
+
+    try {
+      const aiResult = await this.generateWithPrompt(
+        buildErrorAnalysisPrompt,
+        input,
+      );
+
+      // Validate AI output shape (very important)
+      if (
+        aiResult &&
+        typeof aiResult.WhatType === "string" &&
+        typeof aiResult.message === "string" &&
+        typeof aiResult.category === "string" &&
+        typeof aiResult.messageDeveloper === "string" &&
+        ["critical", "serious", "warning", "error"].includes(aiResult.severity)
+      ) {
+        return aiResult as SystemErrorReport;
+      }
+
+      console.warn("AI analysis returned invalid format, falling back");
+      return manualErrorAnalysis(input);
+    } catch (error) {
+      console.error("AI analysis failed, falling back", error);
+      return manualErrorAnalysis(input);
+    }
   }
 }

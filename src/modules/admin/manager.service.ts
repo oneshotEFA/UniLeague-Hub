@@ -175,16 +175,24 @@ export class ManagerServices {
     try {
       if (input.tournamentType === "League") {
         const { teams, rounds, matchesPerWeek, startingDate } = input;
-        const fixture = await AiService.generateRandomLeagueFixture({
+        const res = await AiService.generateRandomLeagueFixture({
           teams,
           rounds,
           matchesPerWeek,
           startDate: startingDate,
           daysBetweenWeeks: 7,
         });
+
+        if (!res.ok) {
+          console.log(res.message);
+          return {
+            ok: false,
+            error: String(res.message),
+          };
+        }
         return {
           ok: true,
-          data: fixture,
+          data: res.data,
         };
       } else if (input.tournamentType === "knockout") {
         const { teams, startingDate } = input;

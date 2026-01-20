@@ -21,7 +21,7 @@ eventBus.on(
 
         await notification.broadCastToWeb(message);
       },
-      { retries: 5, onFail: async () => {}, onRecover: async () => {} }
+      { retries: 5, }
     );
   }
 );

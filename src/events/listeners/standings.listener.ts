@@ -26,18 +26,7 @@ eventBus.on(
       },
       {
         retries: 5,
-        onFail: async (error) => {
-          console.error(
-            "Failed to update standings for match:",
-            payload,
-            error
-          );
-          if (!isRecoverable(error)) {
-            // notificationService.systemCall()
-          }
-          //analysis the error and return the data
-          // notificationService.systemCall()
-        },
+       
         onRecover: async () => {
           await tournamentService.resetTournamentStandings(
             payload.tournamentId
