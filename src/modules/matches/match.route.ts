@@ -6,8 +6,7 @@ const router = Router();
 // GET ALL MATCHES
 router.get("/all/:id", MatchController.getMatches);
 
-// CREATE MATCH
-router.post("/", MatchController.createMatch);
+
 
 // UPDATE MATCH SCHEDULE
 router.put("/:id/schedule", MatchController.updateMatchSchedule);
@@ -18,8 +17,7 @@ router.put("/:id/start", MatchController.startMatch);
 // POSTPONE MATCH
 router.put("/:id/postpone", MatchController.postponeMatch);
 
-// END MATCH
-router.put("/:id/end", MatchController.endMatch);
+
 
 // GET MATCH BY ID
 router.get("/:id", MatchController.getMatchById);

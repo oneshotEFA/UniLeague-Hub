@@ -1,9 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-
-import { AdminRole } from "../../generated/prisma";
 import { prisma } from "../config/db.config";
-
-export function requireAdmin(roles: AdminRole[]) {
+type role = "tournamentManager" | "superAdmin" | "coach";
+export function requireAdmin(roles: role[]) {
   return async (req: Request, res: Response, next: NextFunction) => {
     const user = (req as any).user; // from requireAuth
 
