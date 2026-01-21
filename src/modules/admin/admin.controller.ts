@@ -15,7 +15,7 @@ const adminService = new AdminService(
   prisma,
   tournament,
   notificationService,
-  auth
+  auth,
 );
 
 export class AdminControl {
@@ -28,7 +28,7 @@ export class AdminControl {
           .json(
             new ApiResponseBuilder()
               .badRequest("Logo file is required")
-              .build(res)
+              .build(res),
           );
       }
       const createTournament = await tournament.createTournament({
@@ -42,7 +42,7 @@ export class AdminControl {
           .json(
             new ApiResponseBuilder()
               .badRequest(createTournament.error)
-              .build(res)
+              .build(res),
           );
       }
 
@@ -52,14 +52,14 @@ export class AdminControl {
           new ApiResponseBuilder()
             .created("Tournament created successfully")
             .withData(createTournament.data)
-            .build(res)
+            .build(res),
         );
     } catch (err) {
       console.error("Error during tournament creation:", err);
       return res
         .status(500)
         .json(
-          new ApiResponseBuilder().internalError("Server error").build(res)
+          new ApiResponseBuilder().internalError("Server error").build(res),
         );
     }
   }
@@ -72,14 +72,10 @@ export class AdminControl {
         .status(400)
         .json(new ApiResponseBuilder().badRequest(update.error).build(res));
     }
-    return res
-      .status(200)
-      .json(
-        new ApiResponseBuilder()
-          .created("updated")
-          .withData(update.data)
-          .build(res)
-      );
+    return new ApiResponseBuilder()
+      .created("updated")
+      .withData(update.data)
+      .build(res);
   }
 
   // delete tournamemnt
@@ -98,7 +94,7 @@ export class AdminControl {
         new ApiResponseBuilder()
           .created("tournament deleted")
           .withData(deleted.data)
-          .build(res)
+          .build(res),
       );
   }
 
@@ -118,7 +114,7 @@ export class AdminControl {
         new ApiResponseBuilder()
           .created("admin deleted")
           .withData(deleted)
-          .build(res)
+          .build(res),
       );
   }
   // get tournamet teams
@@ -136,7 +132,7 @@ export class AdminControl {
         new ApiResponseBuilder()
           .created("tournament teams")
           .withData(teams.data)
-          .build(res)
+          .build(res),
       );
   }
 
@@ -170,7 +166,7 @@ export class AdminControl {
         new ApiResponseBuilder()
           .created("tournamnet manager")
           .withData(managers.data)
-          .build(res)
+          .build(res),
       );
   }
 
@@ -180,13 +176,13 @@ export class AdminControl {
 
     const removeManager = await adminService.removeTournamentManager(
       tournamentId,
-      managerId
+      managerId,
     );
     if (!removeManager.ok) {
       return res
         .status(400)
         .json(
-          new ApiResponseBuilder().badRequest(removeManager.error).build(res)
+          new ApiResponseBuilder().badRequest(removeManager.error).build(res),
         );
     }
     return res
@@ -195,7 +191,7 @@ export class AdminControl {
         new ApiResponseBuilder()
           .created("manager removed")
           .withData(removeManager)
-          .build(res)
+          .build(res),
       );
   }
 
@@ -213,7 +209,7 @@ export class AdminControl {
         new ApiResponseBuilder()
           .created("all admins")
           .withData(admins.data)
-          .build(res)
+          .build(res),
       );
   }
 
@@ -260,7 +256,7 @@ export class AdminControl {
         new ApiResponseBuilder()
           .created("updated")
           .withData(updated.data)
-          .build(res)
+          .build(res),
       );
   }
 
@@ -280,7 +276,7 @@ export class AdminControl {
         new ApiResponseBuilder()
           .created("deleted")
           .withData(deleted.data)
-          .build(res)
+          .build(res),
       );
   }
 
@@ -298,7 +294,7 @@ export class AdminControl {
         new ApiResponseBuilder()
           .created("managers")
           .withData(managers.data)
-          .build(res)
+          .build(res),
       );
   }
 
@@ -316,7 +312,7 @@ export class AdminControl {
         new ApiResponseBuilder()
           .created("system logs")
           .withData(logs.data)
-          .build(res)
+          .build(res),
       );
   }
   static async getAllMessageMeta(req: Request, res: Response) {
@@ -332,7 +328,7 @@ export class AdminControl {
         new ApiResponseBuilder()
           .ok("get messages")
           .withData(logs.data)
-          .build(res)
+          .build(res),
       );
   }
   static async getMessageOfAdmin(req: Request, res: Response) {
@@ -368,7 +364,7 @@ export class AdminControl {
       username,
       fullName,
       email,
-      tournamentId
+      tournamentId,
     );
     if (!logs.ok) {
       return new ApiResponseBuilder().badRequest(logs.message).build(res);

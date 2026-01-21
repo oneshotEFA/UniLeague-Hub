@@ -27,7 +27,7 @@ export class AdminService {
     private prismaService = prisma,
     private tournamentService: TournamentService,
     private notificationService: NotificationService,
-    private authService: AuthService
+    private authService: AuthService,
   ) {}
 
   // create a tournament
@@ -62,6 +62,12 @@ export class AdminService {
         };
       }
       const update = await this.tournamentService.updateTournament(data);
+      if (!update.ok) {
+        return {
+          ok: false,
+          error: update.error,
+        };
+      }
       return {
         ok: true,
         data: update,
@@ -83,9 +89,8 @@ export class AdminService {
           error: "id is required",
         };
       }
-      const deletedTournament = await this.tournamentService.deleteTournament(
-        id
-      );
+      const deletedTournament =
+        await this.tournamentService.deleteTournament(id);
       return {
         ok: true,
         data: deletedTournament,
@@ -147,9 +152,8 @@ export class AdminService {
           error: "tournament id is required",
         };
       }
-      const teams = await this.tournamentService.getTournamentTeams(
-        tournamentId
-      );
+      const teams =
+        await this.tournamentService.getTournamentTeams(tournamentId);
       return {
         ok: true,
         data: teams,
@@ -166,7 +170,7 @@ export class AdminService {
   async assignManagerToTournament(
     managerId: string,
     tournamentId: string,
-    password?: string
+    password?: string,
   ) {
     try {
       if (!managerId || !tournamentId) {
@@ -218,7 +222,7 @@ export class AdminService {
       }
       const res = await this.resendCredential(
         managerId,
-        tournament.tournamentName
+        tournament.tournamentName,
       );
       if (!res.ok) {
         return {
@@ -333,7 +337,7 @@ export class AdminService {
       excerpt: string;
       adminId: string;
     },
-    image?: Express.Multer.File
+    image?: Express.Multer.File,
   ) {
     // console.log(content);
     try {
@@ -345,7 +349,7 @@ export class AdminService {
       }
       const news = await this.notificationService.broadCastToWeb(
         content,
-        image
+        image,
       );
 
       if (!news.ok) {
@@ -378,7 +382,7 @@ export class AdminService {
       }
       const update = await this.notificationService.updateBroadCast(
         newsId,
-        content
+        content,
       );
       if (!update.ok) {
         return {
@@ -407,9 +411,8 @@ export class AdminService {
           error: "news id is requierd",
         };
       }
-      const deletedNews = await this.notificationService.deleteBroadCast(
-        newsId
-      );
+      const deletedNews =
+        await this.notificationService.deleteBroadCast(newsId);
 
       if (!deletedNews.ok) {
         return {
@@ -593,7 +596,7 @@ export class AdminService {
     const res = await this.notificationService.sendNotification(
       admin.id,
       message,
-      clientId
+      clientId,
     );
     if (!res) {
       return {
@@ -619,14 +622,14 @@ export class AdminService {
     username: string,
     fullName: string,
     email: string,
-    tournamentId: string
+    tournamentId: string,
   ) {
     const password = generatePassword.toString();
     const res = await this.authService.signup(
       username,
       fullName,
       email,
-      password
+      password,
     );
     if (!res) {
       return {
@@ -644,7 +647,7 @@ export class AdminService {
     const assign = await this.assignManagerToTournament(
       res.data?.id,
       tournamentId,
-      password
+      password,
     );
     if (!assign.ok) {
       return {
@@ -679,7 +682,7 @@ export class AdminService {
         username: user.username,
         temporaryPassword: String(password),
       },
-      tournamentName ?? "Not Defined"
+      tournamentName ?? "Not Defined",
     );
     if (!res.success) {
       return {
